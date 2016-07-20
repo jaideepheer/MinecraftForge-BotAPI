@@ -1,0 +1,16 @@
+[
+{
+  "modid": "botapi",
+  "name": "BotAPI",
+  "description": "A mod to help automate Player movement and other game mechanics by simulating Player input.",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["JD"],
+  "credits": "Jaideep Singh Heer",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]
