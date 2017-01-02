@@ -14,8 +14,9 @@ public class PlayerMovementController {
 
     public EntityPlayerSP getPlayer()
     {
-        return Minecraft.getMinecraft().thePlayer;
+        return Minecraft.getMinecraft().player;
     }
+
     public boolean moveStraightTo(BlockPos pos)
     {
         return moveStraightTo(pos.getX()+0.5D,pos.getY()+0.5D,pos.getZ()+0.5D);
