@@ -1,5 +1,6 @@
 package mod.jd.botapi.Body;
 
+import mod.jd.botapi.Body.Actions.Action;
 import net.minecraft.entity.Entity;
 
 /**
@@ -10,7 +11,6 @@ import net.minecraft.entity.Entity;
  * It will make the Bot more natural.
  */
 public interface Body {
-
     /**
      * Returns the hooked Entity Object.
      * One can use instanceof to check for its class.
@@ -20,37 +20,65 @@ public interface Body {
     Entity getEntity();
 
     /**
-     * Makes the body move forward by the given distance.
-     * @param distance
+     * Sets the currentAction to be performed.
+     * Can be used to set custom actions ...!
+     * NOTE : The currentAction is replaced even if it is incomplete.
+     *      : If the action is not completed it will never stop ...!
+     * @see Action
+     * @param action : The Action to be performed.
      */
-    void moveForward(int distance);
+    void setAction(Action action);
+
+    /**
+     * Returns the currentAction being performed.
+     * @return Action : Object instanceof interface Action.
+     */
+    Action getCurrentAction();
+
+    /**
+     * Called every tick.
+     * Performs all tick operations in proper order.
+     * Executes the Action.performTickAction()
+     */
+    void onTickUpdate();
+    // ==========================================================================================================
+    //
+    //
+    //
+    // ==========================================================================================================
+
+    /**
+     * Makes the body move forward by the given distance.
+     * @param distance : Distance to move.
+     */
+    void moveForward(double distance);
 
     /**
      * Makes the body move backward by the given distance.
-     * @param distance
+     * @param distance : Distance to move.
      */
-    void moveBackward(int distance);
+    void moveBackward(double distance);
 
     /**
      * Makes the body strafe left by the given distance.
-     * @param distance
+     * @param distance : Distance to move.
      */
-    void strafeLeft(int distance);
+    void strafeLeft(double distance);
 
     /**
      * Makes the body strafe right by the given distance.
-     * @param distance
+     * @param distance : Distance to move.
      */
-    void strafeRight(int distance);
+    void strafeRight(double distance);
 
     /**
-     * Sets the Vertical facing of the body's head.
-     * Do not forget to make the movement smooth.
+     * Turns the body's head vertically to match the given angle.
+     * Basically sets the Pitch.
      * @param degree : Ranges from -90 to 90 degrees.
-     *               : -90 degrees is Left
-     *               : +90 degrees is Right
+     *               : -90 degrees is Down
+     *               : +90 degrees is Up
      */
-    void lookVertical(int degree);
+    void lookVertical(double degree);
 
     /**
      * Performs the Right-Click action for the item in hand.

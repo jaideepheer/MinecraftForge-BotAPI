@@ -1,5 +1,7 @@
 package mod.jd.botapi.Body;
 
+import mod.jd.botapi.Body.Actions.Action;
+import mod.jd.botapi.Body.Actions.ActionState;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.entity.Entity;
 
@@ -8,10 +10,10 @@ import net.minecraft.entity.Entity;
  * @see EntityPlayerSP
  * @see Body
  */
-public class PlayerHook implements Body {
+public class PlayerHook extends EmptyBody {
 
     // The Player Object this object is hooked to.
-    EntityPlayerSP player;
+    private EntityPlayerSP player;
 
     /**
      * Constructor which receives the player to hook onto.
@@ -33,28 +35,61 @@ public class PlayerHook implements Body {
         return player;
     }
 
+    /**
+     * Called every tick.
+     * Performs all tick operations in proper order.
+     * Executes the Action.performTickAction()
+     */
     @Override
-    public void moveForward(int distance) {
+    public void onTickUpdate() {
+        super.onTickUpdate();
+    }
+
+    /**
+     * Makes the body move forward by the given distance.
+     * @see Body
+     * @param distance : Distance to move.
+     */
+    @Override
+    public void moveForward(final double distance) {
+        setAction(new Action() {
+            @Override
+            public void firstTickSetup() {
+                getActionMemory().put("distance",distance);
+            }
+
+            @Override
+            public String getActionName() {
+                return "Move Forward";
+            }
+
+            @Override
+            public ActionState performTickAction(Body body) {
+                // Player entity as this is PlayerHook ...!
+                // And performTickAction is passed this body in the EmptyBody class ...!
+                EntityPlayerSP player = (EntityPlayerSP)body.getEntity();
+                return ActionState.RUNNING; //WIP
+            }
+        });
+    }
+
+    @Override
+    public void moveBackward(double distance) {
 
     }
 
     @Override
-    public void moveBackward(int distance) {
+    public void strafeLeft(double distance) {
 
     }
 
     @Override
-    public void strafeLeft(int distance) {
+    public void strafeRight(double distance) {
 
     }
 
     @Override
-    public void strafeRight(int distance) {
-
-    }
-
-    @Override
-    public void lookVertical(int degree) {
+    public void lookVertical(double degree) {
 
     }
 
