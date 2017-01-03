@@ -16,6 +16,8 @@ public abstract class Action {
     // Stores the action state
     private ActionState state;
 
+    // TODO find a way to send errors back to caller. Maybe events ? with multithreading ?
+
     /**
      * Is called every tick to run the action.
      * Handles action states like completed, failed etc.
@@ -25,6 +27,7 @@ public abstract class Action {
     {
         switch (state)
         {
+            // TODO do initial setup before first tick, maybe multithreading
             case FIRST_RUN:
                 actionMemory.clear();
                 firstTickSetup();
@@ -64,6 +67,9 @@ public abstract class Action {
      *  eg: to store coordinates to walk to.
      *  eg: to store the error when the action fails.
      *
+     *  TODO make state update changes and effects between current and next tick. This might save a tick ?
+     * State update is reflected in next tick.
+     *
      * @param body : Receives the body on which the action is to be performed.
      * @return  ActionState : ActionState.COMPLETED if the action is done and successful.
      *                      : ActionState.RUNNING if the action was not completed and needs to be executed in further tick calls ...!
@@ -78,6 +84,7 @@ public abstract class Action {
      * @return successful : True if the action was successful.
      */
     public ActionState getActionState(){return state;}
+    // TODO we'd probably need to set action states too. Make it pause, ready, running. Or just use functions for that.
 
     public Action getAction(){return this;}
 }

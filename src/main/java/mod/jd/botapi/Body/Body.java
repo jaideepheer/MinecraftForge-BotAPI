@@ -10,6 +10,7 @@ import net.minecraft.entity.Entity;
  * Do not forget to apply smoothing to all movement and actions.
  * It will make the Bot more natural.
  */
+// TODO find ways to communicate errors and events with callers. Maybe custom events(loop?)?
 public interface Body {
     /**
      * Returns the hooked Entity Object.

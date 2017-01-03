@@ -5,6 +5,7 @@ import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.util.MovementInput;
 import net.minecraft.util.math.BlockPos;
 
+// TODO scavenge all you can and do something about this.
 public class PlayerMovementController {
     private static MovementInput prevIn;
 

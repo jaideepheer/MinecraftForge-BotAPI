@@ -36,6 +36,7 @@ public abstract class EmptyBody implements Body {
     @Override
     public void onTickUpdate()
     {
+        // TODO find a better way for this, about where to handle action state, maybe events ?
         if(currentAction!=null && !(currentAction.getActionState()== ActionState.COMPLETED))
             currentAction.run(this);
     }
