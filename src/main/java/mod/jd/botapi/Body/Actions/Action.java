@@ -11,23 +11,29 @@ import java.util.HashMap;
  */
 public abstract class Action {
 
+    // The number of ticks to skip before each update.
+    int tickUpdateInterval;
+    // The number of ticks to skip before the next updateTick.
+    int currentTick;
     // Provides memory for the action
     private HashMap<String,Object> actionMemory = new HashMap<String, Object>();
     // Stores the action state
     private ActionState state;
 
-    // TODO find a way to send errors back to caller. Maybe events ? with multithreading ?
+    // TODO get rid of this from Body.
 
     /**
      * Is called every tick to run the action.
      * Handles action states like completed, failed etc.
+     * Also handles checking if this is the updateTick.
+     * An updateTick should occur after every tickUpdateInterval.
      * @param body : Receives the body on which the action is to be performed.
      */
     public void run(Body body)
     {
         switch (state)
         {
-            // TODO do initial setup before first tick, maybe multithreading
+            // TODO do initial setup before first tick, in the setter's thread.
             case FIRST_RUN:
                 actionMemory.clear();
                 firstTickSetup();

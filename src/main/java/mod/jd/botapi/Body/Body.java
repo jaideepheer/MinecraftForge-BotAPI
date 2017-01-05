@@ -1,6 +1,6 @@
 package mod.jd.botapi.Body;
 
-import mod.jd.botapi.Body.Actions.Action;
+import mod.jd.botapi.Body.Senses.Sensor;
 import net.minecraft.entity.Entity;
 
 /**
@@ -10,8 +10,24 @@ import net.minecraft.entity.Entity;
  * Do not forget to apply smoothing to all movement and actions.
  * It will make the Bot more natural.
  */
-// TODO find ways to communicate errors and events with callers. Maybe custom events(loop?)?
+// TODO To communicate errors and events with callers use custom eventBus in sensors.
 public interface Body {
+
+    /**
+     * Returns the body's sensor.
+     * Every body should have a sensor.
+     * It should normally be created in the constructor and stored in the body.
+     * @return sensor : the body's sensor.
+     */
+    Sensor getSensor();
+
+    /**
+     * Binds the Body to the given entity.
+     * It should normally be done in the body's constructor.
+     * @param entity : entity to bind to.
+     */
+    void bindEntity(Entity entity);
+
     /**
      * Returns the hooked Entity Object.
      * One can use instanceof to check for its class.
@@ -21,27 +37,25 @@ public interface Body {
     Entity getEntity();
 
     /**
-     * Sets the currentAction to be performed.
-     * Can be used to set custom actions ...!
-     * NOTE : The currentAction is replaced even if it is incomplete.
-     *      : If the action is not completed it will never stop ...!
-     * @see Action
-     * @param action : The Action to be performed.
+     * Is sent a boolean value to determine if the hooked entity should be allowed to be controlled by other sources.
+     * eg. of other sources are Minecraft(the Game), Other Body Objects, etc.
+     * If sent
+     *          True - Other sources can also control the entity.
+     *          False - Only this Body Object can control the Entity.
+     * @param b : boolean, true/false
      */
-    void setAction(Action action);
+    void letOtherSourcesControlEntity(boolean b);
 
     /**
-     * Returns the currentAction being performed.
-     * @return Action : Object instanceof interface Action.
+     * Returns if the hooked entity is allowed to be controlled by other sources.
+     * eg. of other sources are Minecraft(the Game), Other Body Objects, etc.
+     * If sent
+     *          True - Other sources can also control the entity.
+     *          False - Only this Body Object can control the Entity.
+     * @return boolean : true/false
      */
-    Action getCurrentAction();
+    boolean canOtherSourcesControlEntity();
 
-    /**
-     * Called every tick.
-     * Performs all tick operations in proper order.
-     * Executes the Action.performTickAction()
-     */
-    void onTickUpdate();
     // ==========================================================================================================
     //
     //
@@ -49,37 +63,50 @@ public interface Body {
     // ==========================================================================================================
 
     /**
-     * Makes the body move forward by the given distance.
-     * @param distance : Distance to move.
+     * Makes the body start moving forward.
      */
-    void moveForward(double distance);
+    void moveForward();
 
     /**
-     * Makes the body move backward by the given distance.
-     * @param distance : Distance to move.
+     * Makes the body start moving backward.
      */
-    void moveBackward(double distance);
+    void moveBackward();
 
     /**
-     * Makes the body strafe left by the given distance.
-     * @param distance : Distance to move.
+     * Makes the body stop moving.
      */
-    void strafeLeft(double distance);
+    void stopMoving();
 
     /**
-     * Makes the body strafe right by the given distance.
-     * @param distance : Distance to move.
+     * Makes the body start moving left.
      */
-    void strafeRight(double distance);
+    void strafeLeft();
+
+    /**
+     * Makes the body start moving right.
+     */
+    void strafeRight();
 
     /**
      * Turns the body's head vertically to match the given angle.
      * Basically sets the Pitch.
      * @param degree : Ranges from -90 to 90 degrees.
      *               : -90 degrees is Down
+     *               : 0 degrees is Front
      *               : +90 degrees is Up
      */
-    void lookVertical(double degree);
+    void turnHeadToVertical(double degree);
+
+    /**
+     * Turns the body's head horizontally to match the given angle.
+     * Basically sets the Pitch.
+     * // TODO fix this.
+     * @param degree : Ranges from -90 to 90 degrees.
+     *               : -90 degrees is Left
+     *               : 0 degrees is Front
+     *               : +90 degrees is Right
+     */
+    void turnHeadToHorizontal(double degree);
 
     /**
      * Performs the Right-Click action for the item in hand.
@@ -94,4 +121,19 @@ public interface Body {
      *                 : The action will fail if the body is not capable of performing such an action ...!
      */
     boolean interactFacingBlock();
+
+    /**
+     * Performs the Left-Click held action for the body.
+     */
+    void startBreakingBlock();
+    /**
+     * Stops the above action.
+     */
+    void stopBreakingBlock();
+
+    /**
+     * Makes the body hit in looking direction with the thing in hand.
+     * Performs the Left-Click action for the body.
+     */
+    void hit();
 }

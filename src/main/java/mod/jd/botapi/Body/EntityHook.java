@@ -1,8 +1,6 @@
 package mod.jd.botapi.Body;
 
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.MoverType;
-import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
@@ -13,7 +11,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
  * @see Body
  */
 @SideOnly(Side.SERVER)
-public class EntityHook implements Body {
+public class EntityHook {
 
     // The entity this class hooked to.
     Entity entity;
@@ -36,57 +34,4 @@ public class EntityHook implements Body {
         return entity;
     }
 
-    /**
-     * Moves the entity to the specified BlockPos.
-     * @see BlockPos
-     * @param position : BlockPos
-     */
-    public void moveToPosition(BlockPos position)
-    {
-        moveToPosition(position.getX(),position.getY(),position.getZ());
-    }
-    /**
-     * Moves the entity to the specified coordinates.
-     * @param x,y,z : coordinates
-     */
-    public void moveToPosition(double x,double y,double z)
-    {
-        // currently teleports the thingy !!
-        entity.move(MoverType.SELF,x,y,z);
-    }
-
-    @Override
-    public void moveForward(int distance) {
-
-    }
-
-    @Override
-    public void moveBackward(int distance) {
-
-    }
-
-    @Override
-    public void strafeLeft(int distance) {
-
-    }
-
-    @Override
-    public void strafeRight(int distance) {
-
-    }
-
-    @Override
-    public void lookVertical(int degree) {
-
-    }
-
-    @Override
-    public boolean interactItemInHand() {
-        return false;
-    }
-
-    @Override
-    public boolean interactFacingBlock() {
-        return false;
-    }
 }

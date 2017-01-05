@@ -1,17 +1,21 @@
 package mod.jd.botapi.Body;
 
-import mod.jd.botapi.Body.Actions.Action;
-import mod.jd.botapi.Body.Actions.ActionState;
+import mod.jd.botapi.Body.Senses.PlayerSensor;
+import mod.jd.botapi.Body.Senses.Sensor;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.entity.Entity;
 
 /**
- * This class hooks to the given {@link net.minecraft.client.entity.EntityPlayerSP}
+ * This class hooks to the given {@link net.minecraft.client.entity.EntityPlayerSP}.
+ * It provides functions to control the player and sense its surroundings.
  * @see EntityPlayerSP
+ * @see PlayerSensor
  * @see Body
  */
 public class PlayerHook extends EmptyBody {
 
+    // The PlayerSensor to sense the player's surroundings.
+    private PlayerSensor sensor;
     // The Player Object this object is hooked to.
     private EntityPlayerSP player;
 
@@ -22,6 +26,18 @@ public class PlayerHook extends EmptyBody {
     public PlayerHook(EntityPlayerSP targetPlayer)
     {
         player = targetPlayer;
+        sensor = new PlayerSensor();
+        sensor.bindEntity(player);
+    }
+
+    @Override
+    public Sensor getSensor() {
+        return sensor;
+    }
+
+    @Override
+    public void bindEntity(Entity entity) {
+        if(entity instanceof EntityPlayerSP)player = (EntityPlayerSP) entity;
     }
 
     /**
@@ -35,61 +51,43 @@ public class PlayerHook extends EmptyBody {
         return player;
     }
 
-    /**
-     * Called every tick.
-     * Performs all tick operations in proper order.
-     * Executes the Action.performTickAction()
-     */
     @Override
-    public void onTickUpdate() {
-        super.onTickUpdate();
-    }
-
-    /**
-     * Makes the body move forward by the given distance.
-     * @see Body
-     * @param distance : Distance to move.
-     */
-    @Override
-    public void moveForward(final double distance) {
-        setAction(new Action() {
-            @Override
-            public void firstTickSetup() {
-                getActionMemory().put("distance",distance);
-            }
-
-            @Override
-            public String getActionName() {
-                return "Move Forward";
-            }
-
-            @Override
-            public ActionState performTickAction(Body body) {
-                // Player entity as this is PlayerHook ...!
-                // And performTickAction is passed this body in the EmptyBody class ...!
-                EntityPlayerSP player = (EntityPlayerSP)body.getEntity();
-                return ActionState.RUNNING; //WIP
-            }
-        });
+    public void letOtherSourcesControlEntity(boolean b) {
+        // TODO stuff here
     }
 
     @Override
-    public void moveBackward(double distance) {
+    public void moveForward() {
 
     }
 
     @Override
-    public void strafeLeft(double distance) {
+    public void moveBackward() {
 
     }
 
     @Override
-    public void strafeRight(double distance) {
+    public void stopMoving() {
 
     }
 
     @Override
-    public void lookVertical(double degree) {
+    public void strafeLeft() {
+
+    }
+
+    @Override
+    public void strafeRight() {
+
+    }
+
+    @Override
+    public void turnHeadToVertical(double degree) {
+
+    }
+
+    @Override
+    public void turnHeadToHorizontal(double degree) {
 
     }
 
@@ -102,4 +100,20 @@ public class PlayerHook extends EmptyBody {
     public boolean interactFacingBlock() {
         return false;
     }
+
+    @Override
+    public void startBreakingBlock() {
+
+    }
+
+    @Override
+    public void stopBreakingBlock() {
+
+    }
+
+    @Override
+    public void hit() {
+
+    }
+
 }

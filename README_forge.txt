@@ -42,7 +42,7 @@ run "gradlew eclipse"
 (./gradlew eclipse if you are on Mac/Linux)
 
 
-If you preffer to use IntelliJ, steps are a little different.
+If you prefer to use IntelliJ, steps are a little different.
 
 1. Open IDEA, and import project.
 
@@ -60,7 +60,7 @@ Step 4: The final step is to open Eclipse and switch your workspace to /eclipse/
 
 If at any point you are missing libraries in your IDE, or you've run into problems you can
  run "gradlew --refresh-dependencies" to refresh the local cache.
- "gradlew clean" to reset everything {this does not effect your code} and then start the processs again.
+ "gradlew clean" to reset everything {this does not effect your code} and then start the process again.
 
 
 Should it still not work,

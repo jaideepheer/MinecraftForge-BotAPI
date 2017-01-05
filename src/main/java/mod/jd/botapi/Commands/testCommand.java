@@ -1,11 +1,11 @@
 package mod.jd.botapi.Commands;
 
+import mod.jd.botapi.Body.PlayerHook;
+import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommand;
 import net.minecraft.command.ICommandSender;
-import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.MoverType;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.math.BlockPos;
@@ -36,9 +36,17 @@ public class testCommand implements ICommand {
     @Override
     public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException {
         EntityLivingBase e = (EntityLivingBase) sender.getCommandSenderEntity();
-        double x = Integer.parseInt(args[0]);
-        x=e.getEntityAttribute(SharedMonsterAttributes.MOVEMENT_SPEED).getAttributeValue();
-        e.addVelocity(x,Integer.parseInt(args[1]),Integer.parseInt(args[2]));
+
+        double speed =e.getEntityAttribute(SharedMonsterAttributes.MOVEMENT_SPEED).getAttributeValue();
+        System.out.println("SPEED = "+speed);
+        PlayerHook playerHook;
+        if(e instanceof EntityPlayerSP)
+        {
+            playerHook=new PlayerHook((EntityPlayerSP) e);
+            System.out.println("Looking Block = "+playerHook.getSensor().getFacingBlock(Integer.parseInt(args[0])>0,Integer.parseInt(args[1])>0,Integer.parseInt(args[2])>0)
+                    +"\nHealth = "+playerHook.getSensor().getHealth()
+            +"\n\nFacingRayTrace = "+playerHook.getSensor().getFacingRayTrace(Integer.parseInt(args[0])>0,Integer.parseInt(args[1])>0,Integer.parseInt(args[2])>0));
+        }
     }
 
     @Override
