@@ -87,6 +87,43 @@ public interface Sensor {
     float getBlockReachDistance();
 
     /**
+     * Returns the entity's current movement speed.
+     * @return speed
+     */
+    double getMovementSpeed();
+
+    /**
+     * Returns the value of armour on he entity.
+     * @return armour
+     */
+    double getArmour();
+
+    /**
+     * Returns the toughness of the specified piece of armour on the entity.
+     * @return
+     *  TODO : do something about this.
+    double getArmourToughness();
+     */
+
+    /**
+     * Returns the Luck value of the entity.
+     * @return luck
+     */
+    double getLuck();
+
+    /**
+     * Returns the current max attack damage of the entity.
+     * @return attackDamage
+     */
+    double getAttackDamage();
+
+    /**
+     * Returns the current max attack speed of the entity.
+     * @return attackSpeed
+     */
+    double getAttackSpeed();
+
+    /**
      * Returns a unit(normalised) vector of the entity's looking direction.
      * @return lookVector : a unit(normalised) vector of the entity's looking direction.
      */

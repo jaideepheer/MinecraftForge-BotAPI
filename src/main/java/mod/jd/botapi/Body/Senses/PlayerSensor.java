@@ -2,6 +2,9 @@ package mod.jd.botapi.Body.Senses;
 
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.SharedMonsterAttributes;
+import net.minecraft.entity.ai.attributes.IAttribute;
+import net.minecraft.entity.ai.attributes.IAttributeInstance;
 
 /**
  * A sensor for the EntityPlayerSP class.
@@ -37,5 +40,36 @@ public class PlayerSensor extends BasicSensor {
     @Override
     public float getBlockReachDistance() {
         return 4.5F;
+    }
+
+    @Override
+    public double getMovementSpeed() {
+        // TODO fix this. The attribute stores default speed.
+        return player.capabilities.getWalkSpeed();
+    }
+
+    @Override
+    public double getArmour() {
+        return getSharedAttribute(SharedMonsterAttributes.ARMOR).getAttributeValue();
+    }
+
+    @Override
+    public double getLuck() {
+        return player.getLuck();
+    }
+
+    @Override
+    public double getAttackDamage() {//TODO Fix this, always returns 1.0 with weapon.
+        return getSharedAttribute(SharedMonsterAttributes.ATTACK_DAMAGE).getAttributeValue();
+    }
+
+    @Override
+    public double getAttackSpeed() {
+        return getSharedAttribute(SharedMonsterAttributes.ATTACK_SPEED).getAttributeValue();
+    }
+
+    IAttributeInstance getSharedAttribute(IAttribute a)
+    {
+        return player.getEntityAttribute(a);
     }
 }

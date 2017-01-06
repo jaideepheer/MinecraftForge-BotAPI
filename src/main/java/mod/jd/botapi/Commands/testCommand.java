@@ -18,6 +18,7 @@ import java.util.List;
  * For testing purposes only.
  */
 public class testCommand implements ICommand {
+    static PlayerHook playerHook;
     @Override
     public String getName() {
         return "test";
@@ -39,13 +40,49 @@ public class testCommand implements ICommand {
 
         double speed =e.getEntityAttribute(SharedMonsterAttributes.MOVEMENT_SPEED).getAttributeValue();
         System.out.println("SPEED = "+speed);
-        PlayerHook playerHook;
+
         if(e instanceof EntityPlayerSP)
         {
-            playerHook=new PlayerHook((EntityPlayerSP) e);
-            System.out.println("Looking Block = "+playerHook.getSensor().getFacingBlock(Integer.parseInt(args[0])>0,Integer.parseInt(args[1])>0,Integer.parseInt(args[2])>0)
-                    +"\nHealth = "+playerHook.getSensor().getHealth()
+            if(playerHook==null|| Integer.parseInt(args[0])==-1)
+            {
+                playerHook=new PlayerHook((EntityPlayerSP) e);
+            }
+            System.out.println("SPEED = "+playerHook.getSensor().getMovementSpeed()
+                    +"\nLooking Block = "+playerHook.getSensor().getFacingBlock(Integer.parseInt(args[0])>0,Integer.parseInt(args[1])>0,Integer.parseInt(args[2])>0)
+                    +"\nHealth = "+playerHook.getSensor().getHealth()+"/"+playerHook.getSensor().getMaxHealth()
             +"\n\nFacingRayTrace = "+playerHook.getSensor().getFacingRayTrace(Integer.parseInt(args[0])>0,Integer.parseInt(args[1])>0,Integer.parseInt(args[2])>0));
+
+            System.out.println("\nArmour = "+playerHook.getSensor().getArmour()
+            +"\nTotalArmour = "+((EntityPlayerSP)(playerHook.getEntity())).getTotalArmorValue()
+            +"\nLuck = "+playerHook.getSensor().getLuck()
+            +"\nAttackDM = "+playerHook.getSensor().getAttackDamage()
+            +"\nAttackSpeed = "+playerHook.getSensor().getAttackSpeed());
+            switch (Integer.parseInt(args[3])) {
+                case 0:
+                    playerHook.stopMoving();
+                    break;
+                case 1:
+                    playerHook.moveForward();
+                    break;
+                case 2:
+                    playerHook.moveBackward();
+                    break;
+                case 3:
+                    playerHook.strafeLeft();
+                    break;
+                case 4:
+                    playerHook.strafeRight();
+                    break;
+                case 5:
+                    playerHook.startSneaking();
+                    break;
+                case 6:
+                    playerHook.stopSneaking();
+                    break;
+                case 7:
+                    playerHook.jump();
+                    break;
+            }
         }
     }
 
