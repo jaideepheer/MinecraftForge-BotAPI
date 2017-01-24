@@ -3,7 +3,7 @@
   "modid": "botapi",
   "name": "BotAPI",
   "description": "A mod to help automate Player movement and other game mechanics by simulating Player input.",
-  "version": "${version}",
+  "version": "",
   "mcversion": "${mcversion}",
   "url": "",
   "updateUrl": "",

@@ -1,4 +1,4 @@
-package mod.jd.botapi.Body.Senses;
+package mod.jd.botapi.Bot.Body.Senses;
 
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.entity.Entity;
@@ -11,6 +11,12 @@ import net.minecraft.entity.ai.attributes.IAttributeInstance;
  */
 public class PlayerSensor extends BasicSensor {
     private EntityPlayerSP player;
+
+    @Override
+    public void unbindSensor() {
+        // All stuff to unbind.
+    }
+
     @Override
     public float getHealth() {
         return player.getHealth();
@@ -44,7 +50,6 @@ public class PlayerSensor extends BasicSensor {
 
     @Override
     public double getMovementSpeed() {
-        // TODO fix this. The attribute stores default speed.
         return player.capabilities.getWalkSpeed();
     }
 

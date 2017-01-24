@@ -1,19 +1,24 @@
-package mod.jd.botapi.Body;
+package mod.jd.botapi.Bot.Body;
 
-import mod.jd.botapi.Body.Senses.PlayerSensor;
-import mod.jd.botapi.Body.Senses.Sensor;
+import mod.jd.botapi.Bot.Body.Senses.PlayerSensor;
+import mod.jd.botapi.Bot.Body.Senses.Sensor;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.MovementInput;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.entity.living.LivingEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 /**
  * This class hooks to the given {@link net.minecraft.client.entity.EntityPlayerSP}.
- * It provides functions to control the player and sense its surroundings.
+ * It provides functions to control the player and a sensor to sense its surroundings.
  * @see EntityPlayerSP
  * @see PlayerSensor
+ * @see EmptyBody
  * @see Body
  */
-public class PlayerHook extends EmptyBody {
+public class PlayerBody extends EmptyBody {
 
     // The PlayerSensor to sense the player's surroundings.
     private PlayerSensor sensor;
@@ -22,16 +27,34 @@ public class PlayerHook extends EmptyBody {
     // The Player's previous(original) MovementInput object.
     private MovementInput previousMovementInput;
 
+    // The pitch and yaw this body must turn to.
+    private float toTurnPitch,toTurnYaw;
+    private double turnSpeed;
+
+    // Speed in degrees per second the player can turn at max.
+    private static final int MAX_TURN_PER_SEC = 180;
+
     /**
      * Constructor which receives the player to hook onto.
      * @param targetPlayer : Player to hook to.
      */
-    public PlayerHook(EntityPlayerSP targetPlayer)
+    public PlayerBody(EntityPlayerSP targetPlayer)
     {
         player = targetPlayer;
         sensor = new PlayerSensor();
         sensor.bindEntity(player);
         isBinded = true;
+        toTurnPitch=0;
+        toTurnYaw=0;
+        turnSpeed = 0.15364d;
+
+        // Register this class to the EVENT_BUS for updateEvents.
+        MinecraftForge.EVENT_BUS.register(this);
+    }
+
+    @Override
+    public Class getEntityClass() {
+        return EntityPlayerSP.class;
     }
 
     @Override
@@ -79,8 +102,7 @@ public class PlayerHook extends EmptyBody {
             @Override
             public void updatePlayerMoveState()
             {
-                // TODO it can't fly this way as it wont go higher, no double jump
-                if(!getEntity().onGround)this.jump=false;
+                if(getEntity().onGround)this.jump=false;
             }
         };
     }
@@ -209,24 +231,64 @@ public class PlayerHook extends EmptyBody {
     }
 
     // TODO everything down here...
+
+    /**
+     * Fired on every update.
+     * @see LivingEvent.LivingUpdateEvent
+     * @param e
+     */
+    @SubscribeEvent
+    public void onUpdate(PlayerEvent.LivingUpdateEvent e)
+    {
+        if(!e.getEntity().equals(player))return;
+
+        float diff=0.0f;
+
+            diff = Math.min((float) ((double)toTurnYaw * turnSpeed),MAX_TURN_PER_SEC/20);
+            if((int)toTurnYaw*10==0)diff=toTurnYaw;
+            //player.rotationYawHead += diff;
+            player.rotationYaw += diff;
+            toTurnYaw -= diff;
+
+            diff = Math.min((float) ((double)toTurnPitch * turnSpeed),MAX_TURN_PER_SEC/20);
+            if((int)toTurnPitch*10==0)diff=toTurnPitch;
+            player.rotationPitch += diff;
+            toTurnPitch -= diff;
+    }
+
     @Override
     public void lookLeft(float degrees) {
         if(!isBinded)return;
+        if(degrees<0)degrees = 360 - (-degrees - 360 * (int)(-degrees)/360);
+        else if(degrees>360)degrees -= 360 * (int)(degrees/360);
+        toTurnYaw = -degrees;
     }
 
     @Override
     public void lookRight(float degrees) {
         if(!isBinded)return;
+        if(degrees<0)degrees = 360 - (-degrees - 360 * (int)(-degrees)/360);
+        else if(degrees>360)degrees -= 360 * (int)(degrees/360);
+        toTurnYaw = degrees;
     }
 
     @Override
     public void lookUp(float degrees) {
         if(!isBinded)return;
+        if(degrees<0)lookDown(degrees);
+        else toTurnPitch = -degrees;
     }
 
     @Override
     public void lookDown(float degrees) {
         if(!isBinded)return;
+        if(degrees<0)lookUp(degrees);
+        else toTurnPitch = degrees;
+    }
+
+    @Override
+    public void setTurnSpeed(double turnSpeed) {
+        this.turnSpeed = turnSpeed;
     }
 
     @Override

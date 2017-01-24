@@ -1,4 +1,4 @@
-package mod.jd.botapi.Body.Senses;
+package mod.jd.botapi.Bot.Body.Senses;
 
 import net.minecraft.block.Block;
 import net.minecraft.entity.Entity;
@@ -10,6 +10,12 @@ import net.minecraft.util.math.Vec3d;
  * Sensor interface implements functions an entity's senses should have.
  */
 public interface Sensor {
+
+    /**
+     * Un-Binds the sensor.
+     * This should do everything for a neat unbind.
+     */
+    void unbindSensor();
 
     /**
      * Returns the entity's health.
@@ -101,7 +107,7 @@ public interface Sensor {
     /**
      * Returns the toughness of the specified piece of armour on the entity.
      * @return
-     *  TODO : do something about this.
+     *  TODO : do something about getArmourToughness().
     double getArmourToughness();
      */
 

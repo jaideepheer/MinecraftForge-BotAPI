@@ -1,8 +1,6 @@
-package mod.jd.botapi.Body;
+package mod.jd.botapi.Bot.Body;
 
 import net.minecraft.entity.Entity;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
 
 /**
  * This class hooks to the given entity and sets it up as a Body.
@@ -10,17 +8,16 @@ import net.minecraftforge.fml.relauncher.SideOnly;
  * Although I have not yet tested it on the Client Side.
  * @see Body
  */
-@SideOnly(Side.SERVER)
-public class EntityHook {
+public class EntityBody {
 
     // The entity this class hooked to.
-    Entity entity;
+    private Entity entity;
 
     /**
      * Constructor which receives the entity to hook onto.
      * @param targetEntity : Entity to hook to.
      */
-    public EntityHook(Entity targetEntity)
+    public EntityBody(Entity targetEntity)
     {
         entity = targetEntity;
     }

@@ -1,4 +1,4 @@
-package mod.jd.botapi.Body.Senses;
+package mod.jd.botapi.Bot.Body.Senses;
 
 import net.minecraft.block.Block;
 import net.minecraft.util.math.BlockPos;
@@ -9,6 +9,17 @@ import net.minecraft.util.math.Vec3d;
  * Monitors the entity and its surroundings.
  */
 public abstract class BasicSensor implements Sensor {
+
+    /**
+     * TODO don't use event bus
+     * This should do everything for a neat unbind.
+     */
+    @Override
+    public void finalize()
+    {
+        unbindSensor();
+        // TODO finalise.
+    }
 
     @Override
     public float getYaw() {

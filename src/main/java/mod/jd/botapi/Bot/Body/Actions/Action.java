@@ -1,6 +1,6 @@
-package mod.jd.botapi.Body.Actions;
+package mod.jd.botapi.Bot.Body.Actions;
 
-import mod.jd.botapi.Body.Body;
+import mod.jd.botapi.Bot.Body.Body;
 
 import java.util.HashMap;
 

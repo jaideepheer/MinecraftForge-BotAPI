@@ -1,6 +1,6 @@
-package mod.jd.botapi.Body;
+package mod.jd.botapi.Bot.Body;
 
-import mod.jd.botapi.Body.Senses.Sensor;
+import mod.jd.botapi.Bot.Body.Senses.Sensor;
 import net.minecraft.entity.Entity;
 
 /**
@@ -10,8 +10,21 @@ import net.minecraft.entity.Entity;
  * Do not forget to apply smoothing to all movement and actions.
  * It will make the Bot more natural.
  */
-// TODO communicate errors and events with callers, use custom eventBus in sensors.
+// TODO communicate errors and events with callers.
 public interface Body {
+
+    /**
+     * Returns the class name of the compatible entity.
+     * Can be used to support custom bodies for entities.
+     * // TODO support dynamic addition of custom bodies.
+     * eg : PlayerHook returns EntityPlayerSP.class as it is meant only for that class.
+     *
+     * NOTE : The constructor of every body should accept only the entities it supports ...!
+     *      : Or there should be some check for compatibility to prevent crashes.
+     *
+     * @return ClassName of the entity which can be binded to this body.
+     */
+    Class getEntityClass();
 
     /**
      * Returns the body's sensor.
@@ -101,27 +114,38 @@ public interface Body {
 
     /**
      * Turns the body's head towards left by the given angle in degrees.
+     * Even if the angle is -ve or greater than 180 degrees the head should turn from the Left side.
      * @param degrees : The angle to turn head by.
      */
     void lookLeft(float degrees);
 
     /**
      * Turns the body's head towards right by the given angle in degrees.
+     * Even if the angle is -ve or greater than 180 degrees the head should turn from the Right side.
      * @param degrees : The angle to turn head by.
      */
     void lookRight(float degrees);
 
     /**
      * Turns the body's head upwards by the given angle in degrees.
+     * If -ve degrees, looks down.
      * @param degrees : The angle to turn head by.
      */
     void lookUp(float degrees);
 
     /**
      * Turns the body's head downwards by the given angle in degrees.
+     * If -ve degrees, looks up.
      * @param degrees : The angle to turn head by.
      */
     void lookDown(float degrees);
+
+    /**
+     * Sets the speed the entity should turn its head with.
+     * Is the multiple by which the turn per tick is calculated.
+     * @param turnSpeed : speed the entity should turn its head with
+     */
+    void setTurnSpeed(double turnSpeed);
 
     /**
      * Turns the body's head vertically to match the given angle.

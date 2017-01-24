@@ -1,6 +1,6 @@
 package mod.jd.botapi.Commands;
 
-import mod.jd.botapi.Body.PlayerHook;
+import mod.jd.botapi.Bot.Body.PlayerBody;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommand;
@@ -9,6 +9,7 @@ import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.math.BlockPos;
+import sun.misc.FloatingDecimal;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -18,7 +19,7 @@ import java.util.List;
  * For testing purposes only.
  */
 public class testCommand implements ICommand {
-    static PlayerHook playerHook;
+    static PlayerBody playerHook;
     @Override
     public String getName() {
         return "test";
@@ -45,7 +46,7 @@ public class testCommand implements ICommand {
         {
             if(playerHook==null|| Integer.parseInt(args[0])==-1)
             {
-                playerHook=new PlayerHook((EntityPlayerSP) e);
+                playerHook=new PlayerBody((EntityPlayerSP) e);
             }
             System.out.println("SPEED = "+playerHook.getSensor().getMovementSpeed()
                     +"\nLooking Block = "+playerHook.getSensor().getFacingBlock(Integer.parseInt(args[0])>0,Integer.parseInt(args[1])>0,Integer.parseInt(args[2])>0)
@@ -81,6 +82,21 @@ public class testCommand implements ICommand {
                     break;
                 case 7:
                     playerHook.jump();
+                    break;
+                case 8:
+                    playerHook.lookUp(Float.parseFloat(args[4]));
+                    break;
+                case 9:
+                    playerHook.lookDown(Float.parseFloat(args[4]));
+                    break;
+                case 10:
+                    playerHook.lookRight(Float.parseFloat(args[4]));
+                    break;
+                case 11:
+                    playerHook.lookLeft(Float.parseFloat(args[4]));
+                    break;
+                case 12:
+                    playerHook.setTurnSpeed(Double.parseDouble(args[4]));
                     break;
             }
         }

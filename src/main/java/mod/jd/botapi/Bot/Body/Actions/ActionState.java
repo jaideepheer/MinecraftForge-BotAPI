@@ -1,4 +1,4 @@
-package mod.jd.botapi.Body.Actions;
+package mod.jd.botapi.Bot.Body.Actions;
 
 /**
  * Represents the state of an Action.
