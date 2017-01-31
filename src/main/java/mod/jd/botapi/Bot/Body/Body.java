@@ -1,11 +1,12 @@
 package mod.jd.botapi.Bot.Body;
 
 import mod.jd.botapi.Bot.Body.Senses.Sensor;
-import net.minecraft.entity.Entity;
+
+import java.util.Set;
 
 /**
  * This class handles all the IO of the Bot.
- * It signifies Existence.
+ * It signifies Physical Existence.
  *
  * Do not forget to apply smoothing to all movement and actions.
  * It will make the Bot more natural.
@@ -14,17 +15,17 @@ import net.minecraft.entity.Entity;
 public interface Body {
 
     /**
-     * Returns the class name of the compatible entity.
+     * Returns a set of the classes compatible with this body.
      * Can be used to support custom bodies for entities.
-     * // TODO support dynamic addition of custom bodies.
-     * eg : PlayerHook returns EntityPlayerSP.class as it is meant only for that class.
+     * // TODO support dynamic addition of custom bodies in the compatible bodies list.
+     * eg : PlayerHook returns a HashSet with only EntityPlayerSP.class in it, as it is meant only for that class.
      *
-     * NOTE : The constructor of every body should accept only the entities it supports ...!
+     * NOTE : The constructor of every body should accept only the classes it supports ...!
      *      : Or there should be some check for compatibility to prevent crashes.
      *
      * @return ClassName of the entity which can be binded to this body.
      */
-    Class getEntityClass();
+    Set<Class<?>> getCompatibleClassList();
 
     /**
      * Returns the body's sensor.
@@ -35,11 +36,11 @@ public interface Body {
     Sensor getSensor();
 
     /**
-     * Binds the Body to the given entity.
-     * It should normally be done in the body's constructor.
-     * @param entity : entity to bind to.
+     * Binds the Body to the given object(generally an entity).
+     * It should normally be done in the body's init function.
+     * @param object : object to bind to.
      */
-    void bindEntity(Entity entity);
+    <T>void bindEntity(T object);
 
     /**
      * Un-Binds the entity.
@@ -48,12 +49,12 @@ public interface Body {
     void unbindEntity();
 
     /**
-     * Returns the hooked Entity Object.
+     * Returns the hooked Object.
      * One can use instanceof to check for its class.
      * Or one can even use getClass() to get its Class.
-     * @return Entity : The entity hooked to this body
+     * @return Entity : The object hooked to this body
      */
-    Entity getEntity();
+    Object getBindedObject();
 
     // ==========================================================================================================
     //
@@ -117,28 +118,28 @@ public interface Body {
      * Even if the angle is -ve or greater than 180 degrees the head should turn from the Left side.
      * @param degrees : The angle to turn head by.
      */
-    void lookLeft(float degrees);
+    void lookLeft(double degrees);
 
     /**
      * Turns the body's head towards right by the given angle in degrees.
      * Even if the angle is -ve or greater than 180 degrees the head should turn from the Right side.
      * @param degrees : The angle to turn head by.
      */
-    void lookRight(float degrees);
+    void lookRight(double degrees);
 
     /**
      * Turns the body's head upwards by the given angle in degrees.
      * If -ve degrees, looks down.
      * @param degrees : The angle to turn head by.
      */
-    void lookUp(float degrees);
+    void lookUp(double degrees);
 
     /**
      * Turns the body's head downwards by the given angle in degrees.
      * If -ve degrees, looks up.
      * @param degrees : The angle to turn head by.
      */
-    void lookDown(float degrees);
+    void lookDown(double degrees);
 
     /**
      * Sets the speed the entity should turn its head with.

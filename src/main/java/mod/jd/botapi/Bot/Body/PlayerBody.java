@@ -3,12 +3,14 @@ package mod.jd.botapi.Bot.Body;
 import mod.jd.botapi.Bot.Body.Senses.PlayerSensor;
 import mod.jd.botapi.Bot.Body.Senses.Sensor;
 import net.minecraft.client.entity.EntityPlayerSP;
-import net.minecraft.entity.Entity;
 import net.minecraft.util.MovementInput;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * This class hooks to the given {@link net.minecraft.client.entity.EntityPlayerSP}.
@@ -28,33 +30,46 @@ public class PlayerBody extends EmptyBody {
     private MovementInput previousMovementInput;
 
     // The pitch and yaw this body must turn to.
-    private float toTurnPitch,toTurnYaw;
+    private double toTurnPitch,toTurnYaw;
     private double turnSpeed;
 
     // Speed in degrees per second the player can turn at max.
     private static final int MAX_TURN_PER_SEC = 180;
 
     /**
-     * Constructor which receives the player to hook onto.
-     * @param targetPlayer : Player to hook to.
+     * Constructor which sets the default values and creates the sensor.
      */
-    public PlayerBody(EntityPlayerSP targetPlayer)
+    public PlayerBody()
     {
-        player = targetPlayer;
+        isBinded = false;
         sensor = new PlayerSensor();
-        sensor.bindEntity(player);
-        isBinded = true;
-        toTurnPitch=0;
-        toTurnYaw=0;
-        turnSpeed = 0.15364d;
+        setDefaults();
+
+        // Register this class to the EVENT_BUS for updateEvents.
+        MinecraftForge.EVENT_BUS.register(this);
+    }
+    public PlayerBody(EntityPlayerSP pl)
+    {
+        sensor = new PlayerSensor();
+        setDefaults();
+        bindEntity(pl);
 
         // Register this class to the EVENT_BUS for updateEvents.
         MinecraftForge.EVENT_BUS.register(this);
     }
 
+    public void setDefaults()
+    {
+        toTurnPitch=0;
+        toTurnYaw=0;
+        turnSpeed = 0.15364d;
+    }
+
     @Override
-    public Class getEntityClass() {
-        return EntityPlayerSP.class;
+    public Set<Class<?>> getCompatibleClassList() {
+        HashSet<Class<?>> l = new HashSet<Class<?>>();
+        l.add(EntityPlayerSP.class);
+        return l;
     }
 
     @Override
@@ -63,23 +78,30 @@ public class PlayerBody extends EmptyBody {
     }
 
     @Override
-    public void bindEntity(Entity entity) {
-        if(entity instanceof EntityPlayerSP && player == null)
+    public <T > void bindEntity(T object) {
+        if(object instanceof EntityPlayerSP && player == null)
         {
-            player = (EntityPlayerSP) entity;
+            player = (EntityPlayerSP) object;
+            sensor.bindEntity(player);
             previousMovementInput = player.movementInput;
             isBinded = true;
         }
     }
 
     /**
-     * Returns the hooked Entity Object.
+     * Returns the hooked Player Object.
      * One can use instanceof to check for its class.
      * Or one can even use getClass() to get its Class.
-     * @return player : The entity hooked to this body
+     * @return player : The player hooked to this body
      */
     @Override
-    public Entity getEntity() {
+    public Object getBindedObject() {
+        if(!isBinded)return null;
+        return player;
+    }
+
+    public EntityPlayerSP getPlayer()
+    {
         if(!isBinded)return null;
         return player;
     }
@@ -102,7 +124,7 @@ public class PlayerBody extends EmptyBody {
             @Override
             public void updatePlayerMoveState()
             {
-                if(getEntity().onGround)this.jump=false;
+                if(getPlayer().onGround)this.jump=false;
             }
         };
     }
@@ -183,6 +205,7 @@ public class PlayerBody extends EmptyBody {
      */
     @Override
     public void setMotion(boolean forward, boolean backward, boolean left, boolean right, boolean sneak) {
+        if(!isBinded)return;
         MovementInput i = getJumpSafeMovementInput();
         if(forward){++i.moveForward;i.forwardKeyDown=true;}
         else if(backward){--i.moveForward;i.backKeyDown=true;}
@@ -230,34 +253,33 @@ public class PlayerBody extends EmptyBody {
         if(player.isSneaking())player.movementInput.moveStrafe = (float)((double)player.movementInput.moveStrafe*0.3D);
     }
 
-    // TODO everything down here...
-
     /**
      * Fired on every update.
      * @see LivingEvent.LivingUpdateEvent
-     * @param e
+     * @param e : receives and stores the LivingUpdateEvent
      */
     @SubscribeEvent
     public void onUpdate(PlayerEvent.LivingUpdateEvent e)
     {
+        if(!isBinded)return;
         if(!e.getEntity().equals(player))return;
 
-        float diff=0.0f;
+        double diff;
 
-            diff = Math.min((float) ((double)toTurnYaw * turnSpeed),MAX_TURN_PER_SEC/20);
+            diff = Math.min( (toTurnYaw * turnSpeed),MAX_TURN_PER_SEC/20);
             if((int)toTurnYaw*10==0)diff=toTurnYaw;
             //player.rotationYawHead += diff;
             player.rotationYaw += diff;
             toTurnYaw -= diff;
 
-            diff = Math.min((float) ((double)toTurnPitch * turnSpeed),MAX_TURN_PER_SEC/20);
+            diff = Math.min( (toTurnPitch * turnSpeed),MAX_TURN_PER_SEC/20);
             if((int)toTurnPitch*10==0)diff=toTurnPitch;
             player.rotationPitch += diff;
             toTurnPitch -= diff;
     }
 
     @Override
-    public void lookLeft(float degrees) {
+    public void lookLeft(double degrees) {
         if(!isBinded)return;
         if(degrees<0)degrees = 360 - (-degrees - 360 * (int)(-degrees)/360);
         else if(degrees>360)degrees -= 360 * (int)(degrees/360);
@@ -265,7 +287,7 @@ public class PlayerBody extends EmptyBody {
     }
 
     @Override
-    public void lookRight(float degrees) {
+    public void lookRight(double degrees) {
         if(!isBinded)return;
         if(degrees<0)degrees = 360 - (-degrees - 360 * (int)(-degrees)/360);
         else if(degrees>360)degrees -= 360 * (int)(degrees/360);
@@ -273,14 +295,14 @@ public class PlayerBody extends EmptyBody {
     }
 
     @Override
-    public void lookUp(float degrees) {
+    public void lookUp(double degrees) {
         if(!isBinded)return;
         if(degrees<0)lookDown(degrees);
         else toTurnPitch = -degrees;
     }
 
     @Override
-    public void lookDown(float degrees) {
+    public void lookDown(double degrees) {
         if(!isBinded)return;
         if(degrees<0)lookUp(degrees);
         else toTurnPitch = degrees;
@@ -293,14 +315,15 @@ public class PlayerBody extends EmptyBody {
 
     @Override
     public void turnToPitch(double degree) {
-        if(!isBinded)return;
+        if(isBinded)toTurnPitch = degree;
     }
 
     @Override
     public void turnToYaw(double degree) {
-        if(!isBinded)return;
+        if(isBinded)toTurnYaw=degree;
     }
 
+    // TODO everything down here in PlayerBody...
     @Override
     public boolean interactItemInHand() {
         if(!isBinded)return false;
