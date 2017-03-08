@@ -1,6 +1,7 @@
 package mod.jd.botapi.Commands;
 
 import mod.jd.botapi.Bot.Body.PlayerBody;
+import mod.jd.botapi.Bot.Bot;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommand;
@@ -20,6 +21,8 @@ import java.util.List;
  */
 public class testCommand implements ICommand {
     static PlayerBody playerHook;
+    static Bot b;
+    Thread t;
     @Override
     public String getName() {
         return "test";
@@ -37,6 +40,32 @@ public class testCommand implements ICommand {
 
     @Override
     public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException {
+
+            if(t==null||args[0]!=null) {
+                b = new Bot();
+                b.bind(new PlayerBody((EntityPlayerSP) sender.getCommandSenderEntity()));
+            }
+            for(int ji=0;ji<10;++ji){
+            t=new Thread(() -> {
+                int i=1;
+                while ((i--)>0){
+                b.jump();
+                    try {
+                        Thread.sleep(3000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                b.stopMoving();
+            });
+
+        t.start();
+            }
+
+        if(true)return;
+
+        //======================================================================
+
         EntityLivingBase e = (EntityLivingBase) sender.getCommandSenderEntity();
 
         double speed =e.getEntityAttribute(SharedMonsterAttributes.MOVEMENT_SPEED).getAttributeValue();
@@ -54,7 +83,7 @@ public class testCommand implements ICommand {
             +"\n\nFacingRayTrace = "+playerHook.getSensor().getFacingRayTrace(Integer.parseInt(args[0])>0,Integer.parseInt(args[1])>0,Integer.parseInt(args[2])>0));
 
             System.out.println("\nArmour = "+playerHook.getSensor().getArmour()
-            +"\nTotalArmour = "+((EntityPlayerSP)(playerHook.getEntity())).getTotalArmorValue()
+            +"\nTotalArmour = "+((EntityPlayerSP)(playerHook.getBindedObject())).getTotalArmorValue()
             +"\nLuck = "+playerHook.getSensor().getLuck()
             +"\nAttackDM = "+playerHook.getSensor().getAttackDamage()
             +"\nAttackSpeed = "+playerHook.getSensor().getAttackSpeed());

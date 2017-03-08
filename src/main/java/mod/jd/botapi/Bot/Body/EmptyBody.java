@@ -1,7 +1,5 @@
 package mod.jd.botapi.Bot.Body;
 
-import java.util.Set;
-
 /**
  * Base class which implements interface Body and sets up basic working, common for all functions.
  */

@@ -29,6 +29,11 @@ public class PlayerBody extends EmptyBody {
     // The Player's previous(original) MovementInput object.
     private MovementInput previousMovementInput;
 
+    // Used to hold the jump key in the JumpSafeMovementInput.
+    private boolean holdJump = false;
+    // Used to count the ticks for which jump is pressed.
+    private short jumpTicks = 0;
+
     // The pitch and yaw this body must turn to.
     private double toTurnPitch,toTurnYaw;
     private double turnSpeed;
@@ -124,7 +129,14 @@ public class PlayerBody extends EmptyBody {
             @Override
             public void updatePlayerMoveState()
             {
-                if(getPlayer().onGround)this.jump=false;
+                if(!holdJump)
+                {
+                    if(jumpTicks==0)
+                    {
+                        this.jump = false;
+                    }
+                    else --jumpTicks;
+                }
             }
         };
     }
@@ -157,7 +169,19 @@ public class PlayerBody extends EmptyBody {
     @Override
     public void jump() {
         if(!isBinded)return;
-        player.jump();
+        takeMovementControl();
+        player.movementInput.jump = true;
+        // Keep held fo 1 extra tick as the Bot is not synchronised.
+        // TODO If Bot synchronises, take out jumpTick.
+        jumpTicks = 1;
+    }
+
+    @Override
+    public void jumpHold() {
+        if(!isBinded)return;
+        takeMovementControl();
+        player.movementInput.jump = true;
+        holdJump = true;
     }
 
     /**

@@ -9,12 +9,12 @@ import java.util.Set;
 /**
  * This is the main Bot class.
  * It manages the Body and the AI, including Script execution and stuff.
- * It creates and manages all the threads for its Body and AI.
+ * It creates and manages all the threads for its Body, Responsibility conscience and Objective conscience.
  * @see mod.jd.botapi.Bot.Body.Body
  */
-public class Bot {
+public class Bot implements BasicActions{
     private static LinkedHashSet<Class<? extends Body>> BodyList = new LinkedHashSet<Class<? extends Body>>();
-    private Body botBody;
+    private Body botBody ;
 
     /**
      * Registers a Body to its list of available bodies to assign a valid body to an object passed to bind function.
@@ -71,5 +71,133 @@ public class Bot {
         {
             ;//Oops no compatible body found ...!
         }
+    }
+
+
+    //======================================================================
+    //
+    //                        BasicActions Start Here
+    //
+    //======================================================================
+    // TODO synchronise the Bot and Body invocations.
+
+    @Override
+    public void moveForward() {
+        botBody.moveForward();
+    }
+
+    @Override
+    public void jump() {
+        botBody.jump();
+    }
+
+    @Override
+    public void jumpHold() {
+        botBody.jumpHold();
+    }
+
+    @Override
+    public void startSneaking() {
+        botBody.startSneaking();
+    }
+
+    @Override
+    public void stopSneaking() {
+        botBody.stopSneaking();
+    }
+
+    @Override
+    public void moveBackward() {
+        botBody.moveBackward();
+    }
+
+    @Override
+    public void setMotion(boolean forward, boolean backward, boolean left, boolean right, boolean sneak) {
+        botBody.setMotion(forward,backward,left,right,sneak);
+    }
+
+    @Override
+    public void stopMoving() {
+        botBody.stopMoving();
+    }
+
+    @Override
+    public void strafeLeft() {
+        botBody.strafeLeft();
+    }
+
+    @Override
+    public void strafeRight() {
+        botBody.strafeRight();
+    }
+
+    @Override
+    public void lookLeft(double degrees) {
+        botBody.lookLeft(degrees);
+    }
+
+    @Override
+    public void lookRight(double degrees) {
+        botBody.lookRight(degrees);
+    }
+
+    @Override
+    public void lookUp(double degrees) {
+        botBody.lookUp(degrees);
+    }
+
+    @Override
+    public void lookDown(double degrees) {
+        botBody.lookDown(degrees);
+    }
+
+    @Override
+    public void setTurnSpeed(double turnSpeed) {
+        botBody.setTurnSpeed(turnSpeed);
+    }
+
+    @Override
+    public void turnToPitch(double degree) {
+        botBody.turnToPitch(degree);
+    }
+
+    @Override
+    public void turnToYaw(double degree) {
+        botBody.turnToYaw(degree);
+    }
+
+    @Override
+    public boolean interactFacingBlock() {
+        return botBody.interactFacingBlock();
+    }
+
+    @Override
+    public boolean interactItemInHand() {
+        return botBody.interactItemInHand();
+    }
+
+    @Override
+    public void startInteractItemInHand() {
+        botBody.startInteractItemInHand();
+    }
+
+    @Override
+    public void stopInteractItemInHand() {
+        botBody.stopInteractItemInHand();
+    }
+
+    @Override
+    public void startBreakingBlock() {
+        botBody.startBreakingBlock();
+    }
+
+    @Override
+    public void stopBreakingBlock() {
+        botBody.stopBreakingBlock();
+    }
+
+    @Override
+    public void hit() {
+        botBody.hit();
     }
 }
