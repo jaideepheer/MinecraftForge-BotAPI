@@ -2,19 +2,25 @@ package mod.jd.botapi.Bot.Body;
 
 import mod.jd.botapi.Bot.Body.Senses.PlayerSensor;
 import mod.jd.botapi.Bot.Body.Senses.Sensor;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.util.MovementInput;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.fml.common.SidedProxy;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
+import java.lang.reflect.Field;
 import java.util.HashSet;
 import java.util.Set;
 
 /**
  * This class hooks to the given {@link net.minecraft.client.entity.EntityPlayerSP}.
  * It provides functions to control the player and a sensor to sense its surroundings.
+ *
+ * NOTE : This class is only to be used on the Client Side.
+ *
  * @see EntityPlayerSP
  * @see PlayerSensor
  * @see EmptyBody
@@ -26,18 +32,28 @@ public class PlayerBody extends EmptyBody {
     private PlayerSensor sensor;
     // The Player Object this object is hooked to.
     private EntityPlayerSP player;
+
     // The Player's previous(original) MovementInput object.
     private MovementInput previousMovementInput;
+    // To Move state.
+    private MovementFront moveFront;
+    private MovementSide moveSide;
+    // To Sneak
+    public boolean sneak;
 
     // Used to hold the jump key in the JumpSafeMovementInput.
     private boolean holdJump = false;
+    // Synchronised jump flag.
+    private boolean toJump = false;
     // Used to count the ticks for which jump is pressed.
     private short jumpTicks = 0;
+
+    // Used to set the state of left click action.(i.e. activate hand action)
+    private Field handActive;
 
     // The pitch and yaw this body must turn to.
     private double toTurnPitch,toTurnYaw;
     private double turnSpeed;
-
     // Speed in degrees per second the player can turn at max.
     private static final int MAX_TURN_PER_SEC = 180;
 
@@ -46,6 +62,7 @@ public class PlayerBody extends EmptyBody {
      */
     public PlayerBody()
     {
+        if(Minecraft.getMinecraft().world.isRemote)throw (new UnsupportedOperationException());
         isBinded = false;
         sensor = new PlayerSensor();
         setDefaults();
@@ -55,6 +72,7 @@ public class PlayerBody extends EmptyBody {
     }
     public PlayerBody(EntityPlayerSP pl)
     {
+        if(Minecraft.getMinecraft().world.isRemote)throw (new UnsupportedOperationException());
         sensor = new PlayerSensor();
         setDefaults();
         bindEntity(pl);
@@ -68,6 +86,14 @@ public class PlayerBody extends EmptyBody {
         toTurnPitch=0;
         toTurnYaw=0;
         turnSpeed = 0.15364d;
+
+        moveFront = MovementFront.NONE;
+        moveSide = MovementSide.NONE;
+        sneak = false;
+
+        toJump = false;
+        holdJump = false;
+        jumpTicks = 0;
     }
 
     @Override
@@ -83,7 +109,7 @@ public class PlayerBody extends EmptyBody {
     }
 
     @Override
-    public <T > void bindEntity(T object) {
+    public <T> void bindEntity(T object) {
         if(object instanceof EntityPlayerSP && player == null)
         {
             player = (EntityPlayerSP) object;
@@ -153,35 +179,22 @@ public class PlayerBody extends EmptyBody {
             player.movementInput = i;
         }
     }
-    /**
-     * The default speed for players is 1 ...!
-     * @see net.minecraft.util.MovementInputFromOptions
-     */
-    @Override
-    public void moveForward() {
-        if(!isBinded)return;
-        takeMovementControl();
-        player.movementInput.forwardKeyDown = true;
-        player.movementInput.moveForward = 1;
-        if(player.isSneaking())player.movementInput.moveForward = (float)((double)player.movementInput.moveForward*0.3D);
-    }
 
     @Override
     public void jump() {
-        if(!isBinded)return;
-        takeMovementControl();
-        player.movementInput.jump = true;
-        // Keep held fo 1 extra tick as the Bot is not synchronised.
-        // TODO If Bot synchronises, take out jumpTick.
-        jumpTicks = 1;
+        toJump = true;
     }
 
     @Override
     public void jumpHold() {
-        if(!isBinded)return;
-        takeMovementControl();
-        player.movementInput.jump = true;
+        toJump = true;
         holdJump = true;
+    }
+
+    @Override
+    public void jumpRelease() {
+        toJump = false;
+        holdJump = false;
     }
 
     /**
@@ -190,11 +203,7 @@ public class PlayerBody extends EmptyBody {
      */
     @Override
     public void startSneaking() {
-        if(!isBinded)return;
-        takeMovementControl();
-        player.movementInput.sneak = true;
-        player.movementInput.moveStrafe = (float)((double)player.movementInput.moveStrafe*0.3D);
-        player.movementInput.moveForward = (float)((double)player.movementInput.moveForward*0.3D);
+        sneak = true;
     }
 
     /**
@@ -203,52 +212,29 @@ public class PlayerBody extends EmptyBody {
      */
     @Override
     public void stopSneaking() {
-        if(!isBinded)return;
-        takeMovementControl();
-        player.movementInput.sneak = false;
-        player.movementInput.moveStrafe = player.movementInput.moveStrafe==0?0:(float)((double)player.movementInput.moveStrafe/0.3D);
-        player.movementInput.moveForward = player.movementInput.moveForward==0?0:(float)((double)player.movementInput.moveForward/0.3D);
+        sneak = false;
     }
 
     /**
      * The default speed for players is 1 ...!
      * @see net.minecraft.util.MovementInputFromOptions
+     * @see MovementInput
+     * @see EntityPlayerSP
+     */
+    @Override
+    public void moveForward() {
+        moveFront = MovementFront.FORWARD;
+    }
+
+    /**
+     * The default speed for players is 1 ...!
+     * @see net.minecraft.util.MovementInputFromOptions
+     * @see MovementInput
+     * @see EntityPlayerSP
      */
     @Override
     public void moveBackward() {
-        if(!isBinded)return;
-        takeMovementControl();
-        player.movementInput.backKeyDown = true;
-        player.movementInput.moveForward = -1;
-        if(player.isSneaking())player.movementInput.moveForward = (float)((double)player.movementInput.moveForward*0.3D);
-    }
-
-    /**
-     * The default speed for players is 1 ...!
-     * @see net.minecraft.util.MovementInputFromOptions
-     */
-    @Override
-    public void setMotion(boolean forward, boolean backward, boolean left, boolean right, boolean sneak) {
-        if(!isBinded)return;
-        MovementInput i = getJumpSafeMovementInput();
-        if(forward){++i.moveForward;i.forwardKeyDown=true;}
-        else if(backward){--i.moveForward;i.backKeyDown=true;}
-        if(left){++i.moveStrafe;i.leftKeyDown=true;}
-        else if(right){--i.moveStrafe;i.rightKeyDown=true;}
-        if(sneak)
-        {
-            i.moveStrafe = (float)((double)i.moveStrafe*0.3D);
-            i.moveForward = (float)((double)i.moveForward*0.3D);
-        }
-        if(previousMovementInput==null)previousMovementInput = player.movementInput;
-        player.movementInput = i;
-    }
-
-    @Override
-    public void stopMoving() {
-        if(!isBinded||(previousMovementInput==null))return;
-        player.movementInput = previousMovementInput;
-        previousMovementInput = null;
+        moveFront = MovementFront.BACKWARD;
     }
 
     /**
@@ -257,11 +243,7 @@ public class PlayerBody extends EmptyBody {
      */
     @Override
     public void strafeLeft() {
-        if(!isBinded)return;
-        takeMovementControl();
-        player.movementInput.leftKeyDown = true;
-        player.movementInput.moveStrafe = 1;
-        if(player.isSneaking())player.movementInput.moveStrafe = (float)((double)player.movementInput.moveStrafe*0.3D);
+        moveSide = MovementSide.LEFT;
     }
 
     /**
@@ -270,41 +252,92 @@ public class PlayerBody extends EmptyBody {
      */
     @Override
     public void strafeRight() {
-        if(!isBinded)return;
-        takeMovementControl();
-        player.movementInput.rightKeyDown = true;
-        player.movementInput.moveStrafe = -1;
-        if(player.isSneaking())player.movementInput.moveStrafe = (float)((double)player.movementInput.moveStrafe*0.3D);
+        moveSide = MovementSide.RIGHT;
     }
 
     /**
-     * Fired on every update.
-     * @see LivingEvent.LivingUpdateEvent
-     * @param e : receives and stores the LivingUpdateEvent
+     * The default speed for players is 1 ...!
+     * @see net.minecraft.util.MovementInputFromOptions
      */
-    @SubscribeEvent
-    public void onUpdate(PlayerEvent.LivingUpdateEvent e)
+    @Override
+    public void setMotion(MovementFront front, MovementSide side, boolean sneak) {
+        moveFront = front;
+        moveSide = side;
+        this.sneak = sneak;
+    }
+
+    @Override
+    public void stopMoving() {
+        moveSide = MovementSide.NONE;
+        moveFront = MovementFront.NONE;
+    }
+
+    @Override
+    public boolean onLivingUpdate(PlayerEvent.LivingUpdateEvent e)
     {
-        if(!isBinded)return;
-        if(!e.getEntity().equals(player))return;
+        // Check for proper binding and Body state.
+        if(!super.onLivingUpdate(e))return false;
 
-        double diff;
+        // Jump Update
+        if(toJump)
+        {
+            takeMovementControl();
+            player.movementInput.jump = true;
+        }
+        // Movement Update
+        if( moveFront.set)
+        {
+            takeMovementControl();
+            player.movementInput.moveForward = moveFront.val;
+            if(player.isSneaking())
+                player.movementInput.moveForward = (float)((double)player.movementInput.moveForward*0.3D);
+        }
+        if(moveSide.set)
+        {
+            takeMovementControl();
+            player.movementInput.moveStrafe = moveSide.val;
+            if(player.isSneaking())
+                player.movementInput.moveStrafe = (float)((double)player.movementInput.moveStrafe*0.3D);
+        }
+        // Sneak Update
+        if(sneak)
+        {
+            takeMovementControl();
+            player.movementInput.sneak = true;
+            player.movementInput.moveStrafe = (float)((double)player.movementInput.moveStrafe*0.3D);
+            player.movementInput.moveForward = (float)((double)player.movementInput.moveForward*0.3D);
+        }
+        else
+        {
+            takeMovementControl();
+            player.movementInput.sneak = false;
+            player.movementInput.moveStrafe = player.movementInput.moveStrafe==0?0:(float)((double)player.movementInput.moveStrafe/0.3D);
+            player.movementInput.moveForward = player.movementInput.moveForward==0?0:(float)((double)player.movementInput.moveForward/0.3D);
+        }
 
-            diff = Math.min( (toTurnYaw * turnSpeed),MAX_TURN_PER_SEC/20);
-            if((int)toTurnYaw*10==0)diff=toTurnYaw;
+
+        // Facing direction update.
+        if(toTurnYaw>0) {
+            double diff;
+            diff = Math.min((toTurnYaw * turnSpeed), MAX_TURN_PER_SEC / 20);
+            if ((int) toTurnYaw * 10 == 0) diff = toTurnYaw;
             //player.rotationYawHead += diff;
             player.rotationYaw += diff;
             toTurnYaw -= diff;
-
-            diff = Math.min( (toTurnPitch * turnSpeed),MAX_TURN_PER_SEC/20);
-            if((int)toTurnPitch*10==0)diff=toTurnPitch;
+        }
+        if(toTurnPitch>0){
+            double diff;
+            diff = Math.min((toTurnPitch * turnSpeed), MAX_TURN_PER_SEC / 20);
+            if ((int) toTurnPitch * 10 == 0) diff = toTurnPitch;
             player.rotationPitch += diff;
             toTurnPitch -= diff;
+        }
+        // Return true if everything went fine.
+        return true;
     }
 
     @Override
     public void lookLeft(double degrees) {
-        if(!isBinded)return;
         if(degrees<0)degrees = 360 - (-degrees - 360 * (int)(-degrees)/360);
         else if(degrees>360)degrees -= 360 * (int)(degrees/360);
         toTurnYaw = -degrees;
@@ -312,7 +345,6 @@ public class PlayerBody extends EmptyBody {
 
     @Override
     public void lookRight(double degrees) {
-        if(!isBinded)return;
         if(degrees<0)degrees = 360 - (-degrees - 360 * (int)(-degrees)/360);
         else if(degrees>360)degrees -= 360 * (int)(degrees/360);
         toTurnYaw = degrees;
@@ -320,14 +352,12 @@ public class PlayerBody extends EmptyBody {
 
     @Override
     public void lookUp(double degrees) {
-        if(!isBinded)return;
         if(degrees<0)lookDown(degrees);
         else toTurnPitch = -degrees;
     }
 
     @Override
     public void lookDown(double degrees) {
-        if(!isBinded)return;
         if(degrees<0)lookUp(degrees);
         else toTurnPitch = degrees;
     }
@@ -339,12 +369,12 @@ public class PlayerBody extends EmptyBody {
 
     @Override
     public void turnToPitch(double degree) {
-        if(isBinded)toTurnPitch = degree;
+        toTurnPitch = degree;
     }
 
     @Override
     public void turnToYaw(double degree) {
-        if(isBinded)toTurnYaw=degree;
+        toTurnYaw=degree;
     }
 
     // TODO everything down here in PlayerBody...

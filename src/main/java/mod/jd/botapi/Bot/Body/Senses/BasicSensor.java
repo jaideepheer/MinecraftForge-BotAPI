@@ -11,14 +11,13 @@ import net.minecraft.util.math.Vec3d;
 public abstract class BasicSensor implements Sensor {
 
     /**
-     * TODO don't use event bus
      * This should do everything for a neat unbind.
      */
     @Override
     public void finalize()
     {
         unbindSensor();
-        // TODO finalise.
+        // TODO : finalise and unbind.
     }
 
     @Override

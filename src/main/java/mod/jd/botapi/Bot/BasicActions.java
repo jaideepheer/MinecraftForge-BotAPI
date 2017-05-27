@@ -6,6 +6,12 @@ package mod.jd.botapi.Bot;
 public interface BasicActions {
 
     /**
+     * Stores the motion state of the bot/body.
+     * */
+    enum MovementFront{BACKWARD(-1) ,NONE(0) ,FORWARD(1);public int val;public boolean set;private MovementFront(int v){this.val=v;if(v!=0)this.set=true;}};
+    enum MovementSide{LEFT(1) ,NONE(0) ,RIGHT(-1);public int val;public boolean set;private MovementSide(int v){this.val=v;if(v!=0)this.set=true;}};
+
+    /**
      * Makes the bot/body start moving forward.
      */
     void moveForward();
@@ -20,6 +26,11 @@ public interface BasicActions {
      * Used in Double Jumping.
      */
     void jumpHold();
+    /**
+     * Makes the bot/body release the jump key.
+     * Used to undo the action of jumpHold().
+     */
+    void jumpRelease();
 
     /**
      * Makes the bot/body double jump.
@@ -45,13 +56,11 @@ public interface BasicActions {
     /**
      * Sets the motion for the bot/body.
      * One can use this to move in two directions eg. Forward and Right.
-     * @param forward : If true the bot/body starts moving forward.
-     * @param backward : If true the bot/body starts moving backward.
-     * @param left : If true the bot/body starts strafing left.
-     * @param right : If true the bot/body starts strafing right.
+     * @param front : If true the bot/body starts moving forward(1)/backward(-1).
+     * @param side : If true the bot/body starts strafing left(1)/right(-1).
      * @param sneak : If true the bot/body starts sneaking.
      */
-    void setMotion(boolean forward, boolean backward, boolean left, boolean right, boolean sneak);
+    void setMotion(MovementFront front, MovementSide side, boolean sneak);
 
     /**
      * Makes the bot/body stop moving.

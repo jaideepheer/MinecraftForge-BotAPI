@@ -79,7 +79,6 @@ public class Bot implements BasicActions{
     //                        BasicActions Start Here
     //
     //======================================================================
-    // TODO synchronise the Bot and Body invocations.
 
     @Override
     public void moveForward() {
@@ -94,6 +93,11 @@ public class Bot implements BasicActions{
     @Override
     public void jumpHold() {
         botBody.jumpHold();
+    }
+
+    @Override
+    public void jumpRelease() {
+        botBody.jumpRelease();
     }
 
     @Override
@@ -112,8 +116,8 @@ public class Bot implements BasicActions{
     }
 
     @Override
-    public void setMotion(boolean forward, boolean backward, boolean left, boolean right, boolean sneak) {
-        botBody.setMotion(forward,backward,left,right,sneak);
+    public void setMotion(MovementFront front,MovementSide side, boolean sneak) {
+        botBody.setMotion(front,side,sneak);
     }
 
     @Override

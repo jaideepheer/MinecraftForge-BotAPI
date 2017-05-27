@@ -12,13 +12,11 @@ import java.util.Set;
  * Do not forget to apply smoothing to all movement and actions.
  * It will make the Bot more natural.
  */
-// TODO communicate errors and events with callers.
 public interface Body extends BasicActions{
 
     /**
      * Returns a set of the classes compatible with this body.
      * Can be used to support custom bodies for entities.
-     * // TODO support dynamic addition of custom bodies in the compatible bodies list.
      * eg : PlayerHook returns a HashSet with only EntityPlayerSP.class in it, as it is meant only for that class.
      *
      * NOTE : The constructor of every body should accept only the classes it supports ...!
