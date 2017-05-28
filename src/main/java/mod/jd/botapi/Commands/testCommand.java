@@ -21,8 +21,6 @@ import java.util.List;
  */
 public class testCommand implements ICommand {
     static PlayerBody playerHook;
-    static Bot b;
-    Thread t;
     @Override
     public String getName() {
         return "test";
@@ -40,30 +38,6 @@ public class testCommand implements ICommand {
 
     @Override
     public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException {
-
-            if(t==null||args[0]!=null) {
-                b = new Bot();
-                b.bind(new PlayerBody((EntityPlayerSP) sender.getCommandSenderEntity()));
-            }
-            for(int ji=0;ji<10;++ji){
-            t=new Thread(() -> {
-                int i=1;
-                while ((i--)>0){
-                b.jump();
-                    try {
-                        Thread.sleep(3000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-                b.stopMoving();
-            });
-
-        t.start();
-            }
-
-        if(true)return;
-
         //======================================================================
 
         EntityLivingBase e = (EntityLivingBase) sender.getCommandSenderEntity();
@@ -75,7 +49,8 @@ public class testCommand implements ICommand {
         {
             if(playerHook==null|| Integer.parseInt(args[0])==-1)
             {
-                playerHook=new PlayerBody((EntityPlayerSP) e);
+                playerHook = null;
+                playerHook=new PlayerBody((EntityPlayerSP) sender.getCommandSenderEntity());
             }
             System.out.println("SPEED = "+playerHook.getSensor().getMovementSpeed()
                     +"\nLooking Block = "+playerHook.getSensor().getFacingBlock(Integer.parseInt(args[0])>0,Integer.parseInt(args[1])>0,Integer.parseInt(args[2])>0)
