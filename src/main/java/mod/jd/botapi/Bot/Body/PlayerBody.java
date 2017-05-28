@@ -6,10 +6,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.util.MovementInput;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.fml.common.SidedProxy;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 import java.lang.reflect.Field;
 import java.util.HashSet;
@@ -34,12 +31,9 @@ public class PlayerBody extends EmptyBody {
     private EntityPlayerSP player;
 
     // The Player's previous(original) MovementInput object.
-    private MovementInput previousMovementInput;
-    // To Move state.
-    private MovementFront moveFront;
-    private MovementSide moveSide;
-    // To Sneak
-    public boolean sneak;
+    private MovementInput originalMovementInput;
+    // The PlayerBody's custom MovementInput object.
+    private MovementInput customMovementInput;
 
     // Used to hold the jump key in the JumpSafeMovementInput.
     private boolean holdJump = false;
@@ -72,13 +66,12 @@ public class PlayerBody extends EmptyBody {
     }
     public PlayerBody(EntityPlayerSP pl)
     {
-        if(Minecraft.getMinecraft().world.isRemote)throw (new UnsupportedOperationException());
+        // TODO: Don't throw exceptions but ensure no errors occur.
+        if(!Minecraft.getMinecraft().world.isRemote)throw (new UnsupportedOperationException("Cannot Instantiate PlayerBody at Server Side."));
         sensor = new PlayerSensor();
+        customMovementInput = getCustomMovementInput();
         setDefaults();
         bindEntity(pl);
-
-        // Register this class to the EVENT_BUS for updateEvents.
-        MinecraftForge.EVENT_BUS.register(this);
     }
 
     public void setDefaults()
@@ -86,10 +79,6 @@ public class PlayerBody extends EmptyBody {
         toTurnPitch=0;
         toTurnYaw=0;
         turnSpeed = 0.15364d;
-
-        moveFront = MovementFront.NONE;
-        moveSide = MovementSide.NONE;
-        sneak = false;
 
         toJump = false;
         holdJump = false;
@@ -110,11 +99,11 @@ public class PlayerBody extends EmptyBody {
 
     @Override
     public <T> void bindEntity(T object) {
-        if(object instanceof EntityPlayerSP && player == null)
+        if(object instanceof EntityPlayerSP)
         {
             player = (EntityPlayerSP) object;
             sensor.bindEntity(player);
-            previousMovementInput = player.movementInput;
+            originalMovementInput = player.movementInput;
             isBinded = true;
         }
     }
@@ -127,7 +116,6 @@ public class PlayerBody extends EmptyBody {
      */
     @Override
     public Object getBindedObject() {
-        if(!isBinded)return null;
         return player;
     }
 
@@ -138,24 +126,22 @@ public class PlayerBody extends EmptyBody {
     }
 
     /**
-     * Sets a new jump safe MovementInput and backs up the original one.
-     */
-    private void takeMovementControl()
-    {
-        takeMovementControl(getJumpSafeMovementInput());
-    }
-
-    /**
-     * Returns a MovementInput which does not cause continuous jumping as it is not watched by keyboard updates.
+     * Returns a MovementInput which responds to the PlayerBody's variables.
      * @return MovementInput
      */
-    private MovementInput getJumpSafeMovementInput()
+    private MovementInput getCustomMovementInput()
     {
         return new MovementInput(){
             @Override
             public void updatePlayerMoveState()
             {
-                if(!holdJump)
+                // Jump Update
+                if(toJump || holdJump)
+                {
+                    this.jump = true;
+                    toJump = false;
+                }
+                else
                 {
                     if(jumpTicks==0)
                     {
@@ -163,20 +149,42 @@ public class PlayerBody extends EmptyBody {
                     }
                     else --jumpTicks;
                 }
+
+                // Key update
+                this.forwardKeyDown = this.moveForward > 0;
+                this.backKeyDown = this.moveForward < 0;
+                this.leftKeyDown = this.moveStrafe > 0;
+                this.rightKeyDown = this.moveStrafe < 0;
+
+                // Facing direction update.
+                if(toTurnYaw!=0) {
+                    double diff;
+                    diff = Math.min((toTurnYaw * turnSpeed), MAX_TURN_PER_SEC / 20);
+                    if ((int) toTurnYaw * 10 == 0) diff = toTurnYaw;
+                    //player.rotationYawHead += diff;
+                    player.rotationYaw += diff;
+                    toTurnYaw -= diff;
+                }
+                if(toTurnPitch!=0){
+                    double diff;
+                    diff = Math.min((toTurnPitch * turnSpeed), MAX_TURN_PER_SEC / 20);
+                    if ((int) toTurnPitch * 10 == 0) diff = toTurnPitch;
+                    player.rotationPitch += diff;
+                    toTurnPitch -= diff;
+                }
+
             }
         };
     }
 
     /**
-     * Sets a new MovementInput and backs up the original one.
-     * @param i : the new MovementInput to set.
+     * Sets a the custom MovementInput and backs up the original one.
      */
-    private void takeMovementControl(MovementInput i)
+    private void takeMovementControl()
     {
         if(isBinded)
         {
-            if(previousMovementInput==null)previousMovementInput = player.movementInput;
-            player.movementInput = i;
+            player.movementInput = customMovementInput;
         }
     }
 
@@ -195,6 +203,7 @@ public class PlayerBody extends EmptyBody {
     public void jumpRelease() {
         toJump = false;
         holdJump = false;
+        jumpTicks = 0;
     }
 
     /**
@@ -203,7 +212,9 @@ public class PlayerBody extends EmptyBody {
      */
     @Override
     public void startSneaking() {
-        sneak = true;
+        customMovementInput.sneak = true;
+        customMovementInput.moveStrafe = (float)((double)customMovementInput.moveStrafe*0.3D);
+        customMovementInput.moveForward = (float)((double)customMovementInput.moveForward*0.3D);
     }
 
     /**
@@ -212,7 +223,9 @@ public class PlayerBody extends EmptyBody {
      */
     @Override
     public void stopSneaking() {
-        sneak = false;
+        customMovementInput.sneak = false;
+        customMovementInput.moveStrafe = customMovementInput.moveStrafe==0?0:(float)((double)customMovementInput.moveStrafe/0.3D);
+        customMovementInput.moveForward = customMovementInput.moveForward==0?0:(float)((double)customMovementInput.moveForward/0.3D);
     }
 
     /**
@@ -223,7 +236,8 @@ public class PlayerBody extends EmptyBody {
      */
     @Override
     public void moveForward() {
-        moveFront = MovementFront.FORWARD;
+        if(player.isSneaking())customMovementInput.moveForward = 0.3f;
+        else customMovementInput.moveForward = 1.0f;
     }
 
     /**
@@ -234,7 +248,8 @@ public class PlayerBody extends EmptyBody {
      */
     @Override
     public void moveBackward() {
-        moveFront = MovementFront.BACKWARD;
+        if(player.isSneaking())customMovementInput.moveForward = -0.3f;
+        else customMovementInput.moveForward = -1.0f;
     }
 
     /**
@@ -243,7 +258,8 @@ public class PlayerBody extends EmptyBody {
      */
     @Override
     public void strafeLeft() {
-        moveSide = MovementSide.LEFT;
+        if(player.isSneaking())customMovementInput.moveStrafe = 0.3f;
+        else customMovementInput.moveStrafe = 1.0f;
     }
 
     /**
@@ -252,7 +268,8 @@ public class PlayerBody extends EmptyBody {
      */
     @Override
     public void strafeRight() {
-        moveSide = MovementSide.RIGHT;
+        if(player.isSneaking())customMovementInput.moveStrafe = -0.3f;
+        else customMovementInput.moveStrafe = -1.0f;
     }
 
     /**
@@ -261,77 +278,27 @@ public class PlayerBody extends EmptyBody {
      */
     @Override
     public void setMotion(MovementFront front, MovementSide side, boolean sneak) {
-        moveFront = front;
-        moveSide = side;
-        this.sneak = sneak;
+        customMovementInput.sneak = sneak;
+
+        if(player.isSneaking())customMovementInput.moveForward = front.val*0.3f;
+        else customMovementInput.moveForward = front.val;
+
+        if(player.isSneaking())customMovementInput.moveStrafe = side.val*0.3f;
+        else customMovementInput.moveStrafe = side.val;
     }
 
     @Override
     public void stopMoving() {
-        moveSide = MovementSide.NONE;
-        moveFront = MovementFront.NONE;
+        customMovementInput.moveForward = customMovementInput.moveStrafe = 0;
+        customMovementInput.jump = customMovementInput.sneak = false;
     }
 
     @Override
     public boolean onLivingUpdate(PlayerEvent.LivingUpdateEvent e)
     {
+        takeMovementControl();
         // Check for proper binding and Body state.
         if(!super.onLivingUpdate(e))return false;
-
-        // Jump Update
-        if(toJump)
-        {
-            takeMovementControl();
-            player.movementInput.jump = true;
-        }
-        // Movement Update
-        if( moveFront.set)
-        {
-            takeMovementControl();
-            player.movementInput.moveForward = moveFront.val;
-            if(player.isSneaking())
-                player.movementInput.moveForward = (float)((double)player.movementInput.moveForward*0.3D);
-        }
-        if(moveSide.set)
-        {
-            takeMovementControl();
-            player.movementInput.moveStrafe = moveSide.val;
-            if(player.isSneaking())
-                player.movementInput.moveStrafe = (float)((double)player.movementInput.moveStrafe*0.3D);
-        }
-        // Sneak Update
-        if(sneak)
-        {
-            takeMovementControl();
-            player.movementInput.sneak = true;
-            player.movementInput.moveStrafe = (float)((double)player.movementInput.moveStrafe*0.3D);
-            player.movementInput.moveForward = (float)((double)player.movementInput.moveForward*0.3D);
-        }
-        else
-        {
-            takeMovementControl();
-            player.movementInput.sneak = false;
-            player.movementInput.moveStrafe = player.movementInput.moveStrafe==0?0:(float)((double)player.movementInput.moveStrafe/0.3D);
-            player.movementInput.moveForward = player.movementInput.moveForward==0?0:(float)((double)player.movementInput.moveForward/0.3D);
-        }
-
-
-        // Facing direction update.
-        if(toTurnYaw>0) {
-            double diff;
-            diff = Math.min((toTurnYaw * turnSpeed), MAX_TURN_PER_SEC / 20);
-            if ((int) toTurnYaw * 10 == 0) diff = toTurnYaw;
-            //player.rotationYawHead += diff;
-            player.rotationYaw += diff;
-            toTurnYaw -= diff;
-        }
-        if(toTurnPitch>0){
-            double diff;
-            diff = Math.min((toTurnPitch * turnSpeed), MAX_TURN_PER_SEC / 20);
-            if ((int) toTurnPitch * 10 == 0) diff = toTurnPitch;
-            player.rotationPitch += diff;
-            toTurnPitch -= diff;
-        }
         // Return true if everything went fine.
         return true;
     }
