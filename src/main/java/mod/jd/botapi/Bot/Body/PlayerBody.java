@@ -4,11 +4,10 @@ import mod.jd.botapi.Bot.Body.Senses.PlayerSensor;
 import mod.jd.botapi.Bot.Body.Senses.Sensor;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
+import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.util.MovementInput;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraft.util.MovementInputFromOptions;
 
-import java.lang.reflect.Field;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -19,9 +18,9 @@ import java.util.Set;
  * NOTE : This class is only to be used on the Client Side.
  *
  * @see EntityPlayerSP
- * @see PlayerSensor
- * @see EmptyBody
- * @see Body
+ * @see PlayerSensor for documentation on the {@link PlayerSensor}
+ * @see EmptyBody for functions common to most Bodies.
+ * @see Body for all the documentation not found here.
  */
 public class PlayerBody extends EmptyBody {
 
@@ -30,10 +29,12 @@ public class PlayerBody extends EmptyBody {
     // The Player Object this object is hooked to.
     private EntityPlayerSP player;
 
-    // The Player's previous(original) MovementInput object.
-    private MovementInput originalMovementInput;
+    // A MovementInput object reserved for user input.
+    private MovementInputFromOptions playerMovementInput;
     // The PlayerBody's custom MovementInput object.
     private MovementInput customMovementInput;
+    // True if the user took over controls.
+    private boolean userTookOver;
 
     // Used to hold the jump key in the JumpSafeMovementInput.
     private boolean holdJump = false;
@@ -42,8 +43,10 @@ public class PlayerBody extends EmptyBody {
     // Used to count the ticks for which jump is pressed.
     private short jumpTicks = 0;
 
-    // Used to set the state of left click action.(i.e. activate hand action)
-    private Field handActive;
+    // Used for synchronous hit func. and to prevent mouse blocking after GUI screens.
+    private boolean toHit,keephit;
+    // Used for synchronous interact func. and to prevent mouse blocking after GUI screens.
+    private boolean toInteract,toKeepInteract;
 
     // The pitch and yaw this body must turn to.
     private double toTurnPitch,toTurnYaw;
@@ -51,27 +54,31 @@ public class PlayerBody extends EmptyBody {
     // Speed in degrees per second the player can turn at max.
     private static final int MAX_TURN_PER_SEC = 180;
 
-    /**
-     * Constructor which sets the default values and creates the sensor.
-     */
-    public PlayerBody()
-    {
-        if(!Minecraft.getMinecraft().world.isRemote)throw (new UnsupportedOperationException());
-        isBinded = false;
-        sensor = new PlayerSensor();
-        setDefaults();
+    // Controllable key bindings
+    private static ControllableKeyBinding hitKey;
+    private static ControllableKeyBinding useItemKey;
+    // True if global keyBindings replaced with the static {@Link ControllableKeyBinding} above.
+    private static boolean controlsTaken = false;
 
-        // Register this class to the EVENT_BUS for updateEvents.
-        MinecraftForge.EVENT_BUS.register(this);
-    }
+    /**
+     * Constructor which sets the default values, creates the sensor and binds the given {@link EntityPlayerSP}.
+     * It raises an {@link UnsupportedOperationException} if called at {@link net.minecraftforge.fml.relauncher.Side#SERVER}, i.e. Server Side.
+     * It also replaces keyBindings at first run.
+     */
     public PlayerBody(EntityPlayerSP pl)
     {
-        // TODO: Don't throw exceptions but ensure no errors occur.
         if(!Minecraft.getMinecraft().world.isRemote)throw (new UnsupportedOperationException("Cannot Instantiate PlayerBody at Server Side."));
         sensor = new PlayerSensor();
         customMovementInput = getCustomMovementInput();
         setDefaults();
         bindEntity(pl);
+
+        if(controlsTaken)return;
+        hitKey = new ControllableKeyBinding(Minecraft.getMinecraft().gameSettings.keyBindAttack);
+        useItemKey = new ControllableKeyBinding(Minecraft.getMinecraft().gameSettings.keyBindUseItem);
+        Minecraft.getMinecraft().gameSettings.keyBindAttack = hitKey;
+        Minecraft.getMinecraft().gameSettings.keyBindUseItem = useItemKey;
+        controlsTaken = true;
     }
 
     public void setDefaults()
@@ -83,6 +90,23 @@ public class PlayerBody extends EmptyBody {
         toJump = false;
         holdJump = false;
         jumpTicks = 0;
+
+        toKeepInteract = false;
+        toInteract = false;
+        toHit = false;
+        keephit = false;
+        userTookOver = false;
+    }
+
+    @Override
+    public void unbindEntity()
+    {
+        player.movementInput = new MovementInputFromOptions(Minecraft.getMinecraft().gameSettings);
+        Minecraft.getMinecraft().gameSettings.keyBindAttack = hitKey.originalKeyBinding;
+        Minecraft.getMinecraft().gameSettings.keyBindUseItem = useItemKey.originalKeyBinding;
+        controlsTaken = false;
+        setDefaults();
+        super.unbindEntity();;
     }
 
     @Override
@@ -103,7 +127,15 @@ public class PlayerBody extends EmptyBody {
         {
             player = (EntityPlayerSP) object;
             sensor.bindEntity(player);
-            originalMovementInput = player.movementInput;
+            playerMovementInput = new MovementInputFromOptions(Minecraft.getMinecraft().gameSettings)
+            {
+              @Override
+              public void updatePlayerMoveState()
+              {
+                  maintainMovementControl();
+              }
+            };
+            player.movementInput = playerMovementInput;
             isBinded = true;
         }
     }
@@ -119,12 +151,6 @@ public class PlayerBody extends EmptyBody {
         return player;
     }
 
-    public EntityPlayerSP getPlayer()
-    {
-        if(!isBinded)return null;
-        return player;
-    }
-
     /**
      * Returns a MovementInput which responds to the PlayerBody's variables.
      * @return MovementInput
@@ -135,6 +161,31 @@ public class PlayerBody extends EmptyBody {
             @Override
             public void updatePlayerMoveState()
             {
+
+                // Maintain proper User and PlayerBody simultaneous control.
+                maintainMovementControl();
+                // If user took over do not proceed. Let the user work. Resume after user input ends.
+                if(userTookOver)return;
+                
+                // Hit update
+                if(toHit)
+                {
+                    hitKey.pressed = true;
+                    hitKey.pressTime = 1;
+                    toHit = false;
+                }
+                else if(keephit){hitKey.pressed = true;++hitKey.pressTime;}
+                else hitKey.pressed = false;
+                // Interact update
+                if(toInteract)
+                {
+                    useItemKey.pressed = true;
+                    useItemKey.pressTime = 1;
+                    toInteract = false;
+                }
+                else if(toKeepInteract){useItemKey.pressed = true;++useItemKey.pressTime;}
+                else useItemKey.pressed = false;
+
                 // Jump Update
                 if(toJump || holdJump)
                 {
@@ -178,13 +229,85 @@ public class PlayerBody extends EmptyBody {
     }
 
     /**
-     * Sets a the custom MovementInput and backs up the original one.
+     * Maintains simultaneous control of the player entity so the both the PlayerBody and the player can control it.
+     * @see MovementInputFromOptions#updatePlayerMoveState() for normal keyboard movement update code.
+     * @see MovementInput for basic movement data storage code.
      */
-    private void takeMovementControl()
+    public void maintainMovementControl()
     {
         if(isBinded)
         {
-            player.movementInput = customMovementInput;
+            userTookOver = false;
+            playerMovementInput.moveStrafe = 0.0F;
+            playerMovementInput.moveForward = 0.0F;
+
+            if (Minecraft.getMinecraft().gameSettings.keyBindForward.isKeyDown())
+            {
+                ++playerMovementInput.moveForward;
+                playerMovementInput.forwardKeyDown = true;
+                player.movementInput = playerMovementInput;
+                userTookOver = true;
+            }
+            else
+            {
+                playerMovementInput.forwardKeyDown = false;
+            }
+
+            if (Minecraft.getMinecraft().gameSettings.keyBindBack.isKeyDown())
+            {
+                --playerMovementInput.moveForward;
+                playerMovementInput.backKeyDown = true;
+                player.movementInput = playerMovementInput;
+                userTookOver = true;
+            }
+            else
+            {
+                playerMovementInput.backKeyDown = false;
+            }
+
+            if (Minecraft.getMinecraft().gameSettings.keyBindLeft.isKeyDown())
+            {
+                ++playerMovementInput.moveStrafe;
+                playerMovementInput.leftKeyDown = true;
+                player.movementInput = playerMovementInput;
+                userTookOver = true;
+            }
+            else
+            {
+                playerMovementInput.leftKeyDown = false;
+            }
+
+            if (Minecraft.getMinecraft().gameSettings.keyBindRight.isKeyDown())
+            {
+                --playerMovementInput.moveStrafe;
+                playerMovementInput.rightKeyDown = true;
+                player.movementInput = playerMovementInput;
+                userTookOver = true;
+            }
+            else
+            {
+                playerMovementInput.rightKeyDown = false;
+            }
+
+            playerMovementInput.jump = Minecraft.getMinecraft().gameSettings.keyBindJump.isKeyDown();
+            playerMovementInput.sneak = Minecraft.getMinecraft().gameSettings.keyBindSneak.isKeyDown();
+
+            if(playerMovementInput.jump || playerMovementInput.sneak)
+            {
+                player.movementInput = playerMovementInput;
+                userTookOver = true;
+            }
+
+            if (playerMovementInput.sneak)
+            {
+                playerMovementInput.moveStrafe = (float)((double) playerMovementInput.moveStrafe * 0.3D);
+                playerMovementInput.moveForward = (float)((double) playerMovementInput.moveForward * 0.3D);
+                player.movementInput = playerMovementInput;
+                userTookOver = true;
+            }
+
+            // Else let the PlayerBody control movement.
+            if(!userTookOver)player.movementInput = customMovementInput;
         }
     }
 
@@ -207,8 +330,8 @@ public class PlayerBody extends EmptyBody {
     }
 
     /**
-     * Sneak reduces speed to 30% ...!
-     * @see net.minecraft.util.MovementInputFromOptions
+     * Sneak reduces player speed to 30% ...!
+     * @see MovementInputFromOptions#updatePlayerMoveState() for movement computation code.
      */
     @Override
     public void startSneaking() {
@@ -218,8 +341,8 @@ public class PlayerBody extends EmptyBody {
     }
 
     /**
-     * Sneak reduces speed to 30% ...!
-     * @see net.minecraft.util.MovementInputFromOptions
+     * Sneak reduces player speed to 30% ...!
+     * @see MovementInputFromOptions#updatePlayerMoveState() for movement computation code.
      */
     @Override
     public void stopSneaking() {
@@ -230,7 +353,7 @@ public class PlayerBody extends EmptyBody {
 
     /**
      * The default speed for players is 1 ...!
-     * @see net.minecraft.util.MovementInputFromOptions
+     * @see MovementInputFromOptions#updatePlayerMoveState() for movement computation code.
      * @see MovementInput
      * @see EntityPlayerSP
      */
@@ -242,7 +365,7 @@ public class PlayerBody extends EmptyBody {
 
     /**
      * The default speed for players is 1 ...!
-     * @see net.minecraft.util.MovementInputFromOptions
+     * @see MovementInputFromOptions#updatePlayerMoveState() for movement computation code.
      * @see MovementInput
      * @see EntityPlayerSP
      */
@@ -254,7 +377,9 @@ public class PlayerBody extends EmptyBody {
 
     /**
      * The default speed for players is 1 ...!
-     * @see net.minecraft.util.MovementInputFromOptions
+     * @see MovementInputFromOptions#updatePlayerMoveState() for movement computation code.
+     * @see MovementInput
+     * @see EntityPlayerSP
      */
     @Override
     public void strafeLeft() {
@@ -264,7 +389,9 @@ public class PlayerBody extends EmptyBody {
 
     /**
      * The default speed for players is 1 ...!
-     * @see net.minecraft.util.MovementInputFromOptions
+     * @see MovementInputFromOptions#updatePlayerMoveState() for movement computation code.
+     * @see MovementInput
+     * @see EntityPlayerSP
      */
     @Override
     public void strafeRight() {
@@ -274,7 +401,13 @@ public class PlayerBody extends EmptyBody {
 
     /**
      * The default speed for players is 1 ...!
-     * @see net.minecraft.util.MovementInputFromOptions
+     * @see MovementInputFromOptions#updatePlayerMoveState() for movement computation code.
+     * @see MovementInput
+     * @see EntityPlayerSP
+     *
+     * @param front A {@link mod.jd.botapi.Bot.BasicActions.MovementFront} object fo Froward/Backward movement.
+     * @param side A {@link mod.jd.botapi.Bot.BasicActions.MovementSide} object fo Left/Right movement.
+     * @param sneak if true the entity starts sneaking.
      */
     @Override
     public void setMotion(MovementFront front, MovementSide side, boolean sneak) {
@@ -291,16 +424,6 @@ public class PlayerBody extends EmptyBody {
     public void stopMoving() {
         customMovementInput.moveForward = customMovementInput.moveStrafe = 0;
         customMovementInput.jump = customMovementInput.sneak = false;
-    }
-
-    @Override
-    public boolean onLivingUpdate(PlayerEvent.LivingUpdateEvent e)
-    {
-        takeMovementControl();
-        // Check for proper binding and Body state.
-        if(!super.onLivingUpdate(e))return false;
-        // Return true if everything went fine.
-        return true;
     }
 
     @Override
@@ -344,42 +467,91 @@ public class PlayerBody extends EmptyBody {
         toTurnYaw=degree;
     }
 
-    // TODO everything down here in PlayerBody...
     @Override
-    public boolean interactItemInHand() {
-        if(!isBinded)return false;
-        return false;
+    public void interactItemInHand() {
+        toInteract = true;
     }
 
     @Override
     public void startInteractItemInHand() {
-        if(!isBinded)return;
+        toKeepInteract = true;
     }
 
     @Override
     public void stopInteractItemInHand() {
-        if(!isBinded)return;
+        toKeepInteract = false;
     }
 
     @Override
-    public boolean interactFacingBlock() {
-        if(!isBinded)return false;
-        return false;
+    public void interactFacingBlock() {
+        toInteract = true;
     }
 
     @Override
     public void startBreakingBlock() {
-        if(!isBinded)return;
+        keephit = true;
     }
 
     @Override
     public void stopBreakingBlock() {
-        if(!isBinded)return;
+        keephit = false;
     }
 
     @Override
     public void hit() {
-        if(!isBinded)return;
+        toHit = true;
     }
 
+}
+
+/**
+ * This class extends {@link KeyBinding} to provide control over its response and simulate key presses via code.
+ * It mainly overrides {@link KeyBinding#isPressed()} and {@link KeyBinding#isKeyDown()} functions.
+ *
+ * NOTE : This class is only to be used on the Client Side.
+ *
+ * @see KeyBinding for the main keyBinding controller class.
+ */
+class ControllableKeyBinding extends KeyBinding
+{
+    public KeyBinding originalKeyBinding;
+    public boolean pressed;
+    public int pressTime;
+    ControllableKeyBinding(KeyBinding k)
+    {
+        super(k.getKeyDescription(),k.getKeyConflictContext(),k.getKeyModifier(),k.getKeyCode(),k.getKeyCategory());
+        originalKeyBinding = k;
+    }
+
+    /**
+     * Returns true if the key is pressed fresh down.
+     * */
+    @Override
+    public boolean isPressed()
+    {
+        if(super.isPressed())
+            return true;
+        if(pressTime == 0)
+            return false;
+        else
+        {
+            --pressTime;
+            return true;
+        }
+    }
+
+    /**
+     * Returns true if the key is held down.
+     * */
+    @Override
+    public boolean isKeyDown()
+    {
+        return pressed || super.isKeyDown();
+    }
+
+    public void unpressKey()
+    {
+        this.pressTime = 0;
+        this.pressed = false;
+    }
 }
