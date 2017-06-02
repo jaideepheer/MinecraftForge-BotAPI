@@ -1,21 +1,28 @@
 package mod.jd.botapi.Bot.Body;
 
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.entity.living.LivingEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import mod.jd.botapi.Bot.Bot;
 
 /**
- * Base class which implements interface Body and sets up basic working, common for all functions.
+ * This serves as a Base class which implements interface Body and sets up basic working, common for all Bodies.
+ * It also registers all classes with the Bot class as a body.
+ * @see Body for more documentation.
+ * @see mod.jd.botapi.Bot.BasicActions for more documentation.
  */
 public abstract class EmptyBody implements Body {
     // Stores if the entity is binded.
     protected boolean isBinded;
+    private static boolean isClassRegistered;
 
     EmptyBody()
     {
-        // Register this class to the EVENT_BUS for updateEvents like onLivingUpdate.
-        MinecraftForge.EVENT_BUS.register(this);
+        registerBotClass();
+    }
+
+    void registerBotClass()
+    {
+        if(isClassRegistered)return;
+        Bot.registerBody(this.getClass());
+        isClassRegistered = true;
     }
 
     @Override
@@ -32,20 +39,55 @@ public abstract class EmptyBody implements Body {
     public void finalize()
     {
         unbindEntity();
-        MinecraftForge.EVENT_BUS.unregister(this);
     }
 
-    /**
-     * Fired on every update.
-     * @see LivingEvent.LivingUpdateEvent
-     * @param e : receives and stores the LivingUpdateEvent
-     */
-    @SubscribeEvent
-    public boolean onLivingUpdate(PlayerEvent.LivingUpdateEvent e)
+    @Override
+    public void faceTowards(double x, double y, double z)
     {
-        // TODO: Remove this if not needed.
-        // Check for proper binding and event invoker.
-        // Returns true only if everything is OK.
-        return isBinded && e == getBindedObject();
+        double yaw,pitch;
+
+        x -= getSensor().getPosition().xCoord;
+        x=-x;
+        y = y - (getSensor().getPosition().yCoord + getSensor().getEntity().getEyeHeight());
+        z -= getSensor().getPosition().zCoord;
+        System.out.println("My dist "+x+","+y+","+z);
+        yaw=getYawFromOriginToPoint(x,z);
+
+        if(y==0)
+        {
+            pitch=0;
+        }
+        else
+        {
+            pitch = getPitchFromOriginToPoint(Math.sqrt((x*x)+(z*z)),y);
+        }
+
+        turnToPitch(pitch);
+        turnToYaw(yaw);
     }
+    private static double getYawFromOriginToPoint(double x, double y)
+    {
+        if(x==0&&y==0)return 0;
+        return 90 - Math.toDegrees(Math.atan2(y,x));
+    }
+
+    private static double getPitchFromOriginToPoint(double x, double y)
+    {
+        if(y==0)return 0;
+        double ans= Math.toDegrees(Math.atan2(y,x));
+        if(ans>90||ans<-90)
+        {
+            if(y<0)
+            {
+                ans = 180 + ans;
+                ans=-ans;
+            }
+            else
+            {
+                ans = 180 - ans;
+            }
+        }
+        return -ans;
+    }
+
 }

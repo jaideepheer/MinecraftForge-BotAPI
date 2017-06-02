@@ -1,5 +1,6 @@
 package mod.jd.botapi.Commands;
 
+import mod.jd.botapi.Bot.AI.Nodes.Actions.MoveStraightToPosAction;
 import mod.jd.botapi.Bot.Body.PlayerBody;
 import mod.jd.botapi.Bot.Bot;
 import net.minecraft.client.entity.EntityPlayerSP;
@@ -10,7 +11,6 @@ import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.math.BlockPos;
-import sun.misc.FloatingDecimal;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -20,7 +20,7 @@ import java.util.List;
  * For testing purposes only.
  */
 public class testCommand implements ICommand {
-    static PlayerBody playerHook;
+    static Bot playerHook;
     @Override
     public String getName() {
         return "test";
@@ -50,18 +50,18 @@ public class testCommand implements ICommand {
             if(playerHook==null|| Integer.parseInt(args[0])==-1)
             {
                 playerHook = null;
-                playerHook=new PlayerBody((EntityPlayerSP) sender.getCommandSenderEntity());
+                playerHook=new Bot(new PlayerBody((EntityPlayerSP) sender.getCommandSenderEntity()));
             }
-            System.out.println("SPEED = "+playerHook.getSensor().getMovementSpeed()
-                    +"\nLooking Block = "+playerHook.getSensor().getFacingBlock(Integer.parseInt(args[0])>0,Integer.parseInt(args[1])>0,Integer.parseInt(args[2])>0)
-                    +"\nHealth = "+playerHook.getSensor().getHealth()+"/"+playerHook.getSensor().getMaxHealth()
-            +"\n\nFacingRayTrace = "+playerHook.getSensor().getFacingRayTrace(Integer.parseInt(args[0])>0,Integer.parseInt(args[1])>0,Integer.parseInt(args[2])>0));
+            System.out.println("SPEED = "+playerHook.getBody().getSensor().getMovementSpeed()
+                    +"\nLooking Block = "+playerHook.getBody().getSensor().getFacingBlock(Integer.parseInt(args[0])>0,Integer.parseInt(args[1])>0,Integer.parseInt(args[2])>0)
+                    +"\nHealth = "+playerHook.getBody().getSensor().getHealth()+"/"+playerHook.getBody().getSensor().getMaxHealth()
+            +"\n\nFacingRayTrace = "+playerHook.getBody().getSensor().getFacingRayTrace(Integer.parseInt(args[0])>0,Integer.parseInt(args[1])>0,Integer.parseInt(args[2])>0));
 
-            System.out.println("\nArmour = "+playerHook.getSensor().getArmour()
-            +"\nTotalArmour = "+((EntityPlayerSP)(playerHook.getBindedObject())).getTotalArmorValue()
-            +"\nLuck = "+playerHook.getSensor().getLuck()
-            +"\nAttackDM = "+playerHook.getSensor().getAttackDamage()
-            +"\nAttackSpeed = "+playerHook.getSensor().getAttackSpeed());
+            System.out.println("\nArmour = "+playerHook.getBody().getSensor().getArmour()
+            +"\nTotalArmour = "+((EntityPlayerSP)(playerHook.getBody().getBindedObject())).getTotalArmorValue()
+            +"\nLuck = "+playerHook.getBody().getSensor().getLuck()
+            +"\nAttackDM = "+playerHook.getBody().getSensor().getAttackDamage()
+            +"\nAttackSpeed = "+playerHook.getBody().getSensor().getAttackSpeed());
             switch (Integer.parseInt(args[3])) {
                 case 0:
                     playerHook.stopMoving();
@@ -100,6 +100,32 @@ public class testCommand implements ICommand {
                     playerHook.lookLeft(Float.parseFloat(args[4]));
                     break;
                 case 12:
+                    playerHook.startBreakingBlock();
+                    break;
+                case 13:
+                    playerHook.stopBreakingBlock();
+                    break;
+                case 14:playerHook.interactFacingBlock();
+                    break;
+                case 15:playerHook.interactItemInHand();
+                    break;
+                case 16:playerHook.startInteractItemInHand();
+                    break;
+                case 17:playerHook.stopInteractItemInHand();
+                    break;
+                case 18:
+                    playerHook.jumpHold();
+                    break;
+                case 19:
+                    playerHook.jumpRelease();
+                    break;
+                case 20:
+                    playerHook.faceTowards(Double.parseDouble(args[4]),Double.parseDouble(args[5]),Double.parseDouble(args[6]));
+                    break;
+                case 21:
+                    playerHook.actionList.add(new MoveStraightToPosAction(new BlockPos(Double.parseDouble(args[4]),Double.parseDouble(args[5]),Double.parseDouble(args[6]))));
+                    break;
+                case 22:
                     playerHook.setTurnSpeed(Double.parseDouble(args[4]));
                     break;
             }

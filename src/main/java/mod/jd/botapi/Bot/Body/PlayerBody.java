@@ -7,6 +7,8 @@ import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.util.MovementInput;
 import net.minecraft.util.MovementInputFromOptions;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.MathHelper;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -52,11 +54,16 @@ public class PlayerBody extends EmptyBody {
     private double toTurnPitch,toTurnYaw;
     private double turnSpeed;
     // Speed in degrees per second the player can turn at max.
-    private static final int MAX_TURN_PER_SEC = 180;
+    private static final double MAX_TURN_FACTOR = 100;
+    private static final double MIN_TURN_FACTOR = 0.2d;
+
+    // Max instant step distance.
+    public static final double MAX_STEP_DISTANCE = 10;
 
     // Controllable key bindings
     private static ControllableKeyBinding hitKey;
     private static ControllableKeyBinding useItemKey;
+
     // True if global keyBindings replaced with the static {@Link ControllableKeyBinding} above.
     private static boolean controlsTaken = false;
 
@@ -81,11 +88,14 @@ public class PlayerBody extends EmptyBody {
         controlsTaken = true;
     }
 
+    /**
+     * Sets the default values for the PlayerBody.
+     * */
     public void setDefaults()
     {
         toTurnPitch=0;
         toTurnYaw=0;
-        turnSpeed = 0.15364d;
+        turnSpeed = 1;
 
         toJump = false;
         holdJump = false;
@@ -106,7 +116,7 @@ public class PlayerBody extends EmptyBody {
         Minecraft.getMinecraft().gameSettings.keyBindUseItem = useItemKey.originalKeyBinding;
         controlsTaken = false;
         setDefaults();
-        super.unbindEntity();;
+        super.unbindEntity();
     }
 
     @Override
@@ -210,16 +220,22 @@ public class PlayerBody extends EmptyBody {
                 // Facing direction update.
                 if(toTurnYaw!=0) {
                     double diff;
-                    diff = Math.min((toTurnYaw * turnSpeed), MAX_TURN_PER_SEC / 20);
-                    if ((int) toTurnYaw * 10 == 0) diff = toTurnYaw;
+                    diff = toTurnYaw * turnSpeed;
+                    double d2 = Math.abs(diff);
+                    if(d2 > MAX_TURN_FACTOR)diff = MAX_TURN_FACTOR*diff/d2;
+                    else if(d2<MIN_TURN_FACTOR)diff = MIN_TURN_FACTOR*diff/d2;
+                    if (Math.abs(toTurnYaw)<=diff) diff = toTurnYaw;
                     //player.rotationYawHead += diff;
                     player.rotationYaw += diff;
                     toTurnYaw -= diff;
                 }
                 if(toTurnPitch!=0){
                     double diff;
-                    diff = Math.min((toTurnPitch * turnSpeed), MAX_TURN_PER_SEC / 20);
-                    if ((int) toTurnPitch * 10 == 0) diff = toTurnPitch;
+                    diff = toTurnPitch * turnSpeed;
+                    double d2 = Math.abs(diff);
+                    if(d2 > MAX_TURN_FACTOR)diff = MAX_TURN_FACTOR*diff/d2;
+                    else if(d2<MIN_TURN_FACTOR)diff = MIN_TURN_FACTOR*diff/d2;
+                    if (Math.abs(toTurnPitch)<=diff) diff = toTurnPitch;
                     player.rotationPitch += diff;
                     toTurnPitch -= diff;
                 }
@@ -327,6 +343,13 @@ public class PlayerBody extends EmptyBody {
         toJump = false;
         holdJump = false;
         jumpTicks = 0;
+    }
+
+    @Override
+    public void doubleJump() {
+        // TODO : fix double jump
+        toJump = true;
+        jumpTicks = 2;
     }
 
     /**
@@ -459,12 +482,13 @@ public class PlayerBody extends EmptyBody {
 
     @Override
     public void turnToPitch(double degree) {
-        toTurnPitch = degree;
+        toTurnPitch = degree - getSensor().getPitch();
     }
 
     @Override
     public void turnToYaw(double degree) {
-        toTurnYaw=degree;
+        toTurnYaw = degree - getSensor().getYaw();
+        if(toTurnYaw > 180)toTurnYaw = toTurnYaw - 360;
     }
 
     @Override
@@ -529,7 +553,7 @@ class ControllableKeyBinding extends KeyBinding
     @Override
     public boolean isPressed()
     {
-        if(super.isPressed())
+        if(originalKeyBinding.isPressed())
             return true;
         if(pressTime == 0)
             return false;
@@ -546,12 +570,6 @@ class ControllableKeyBinding extends KeyBinding
     @Override
     public boolean isKeyDown()
     {
-        return pressed || super.isKeyDown();
-    }
-
-    public void unpressKey()
-    {
-        this.pressTime = 0;
-        this.pressed = false;
+        return pressed || originalKeyBinding.isKeyDown();
     }
 }

@@ -1,6 +1,5 @@
 package mod.jd.botapi;
 
-import jdk.nashorn.internal.ir.annotations.Ignore;
 import net.minecraftforge.client.ClientCommandHandler;
 import net.minecraftforge.fml.common.DummyModContainer;
 import net.minecraftforge.fml.common.Mod;

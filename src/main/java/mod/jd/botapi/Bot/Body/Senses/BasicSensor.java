@@ -1,7 +1,7 @@
 package mod.jd.botapi.Bot.Body.Senses;
 
 import net.minecraft.block.Block;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
 
@@ -22,7 +22,7 @@ public abstract class BasicSensor implements Sensor {
 
     @Override
     public float getYaw() {
-        return getEntity().rotationYaw;
+        return MathHelper.wrapDegrees(getEntity().rotationYaw);
     }
 
     @Override
@@ -36,9 +36,9 @@ public abstract class BasicSensor implements Sensor {
     }
 
     @Override
-    public BlockPos getPosition()
+    public Vec3d getPosition()
     {
-        return getEntity().getPosition();
+        return new Vec3d(getEntity().posX,getEntity().posY,getEntity().posZ);
     }
 
     @Override

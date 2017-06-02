@@ -29,6 +29,7 @@ public interface Body extends BasicActions{
     /**
      * Returns the body's sensor.
      * Every body should have a sensor.
+     * It should serve to inform about the status of the body and its surroundings.
      * It should normally be created in the constructor and stored in the body.
      * @return sensor : the body's sensor.
      */
@@ -36,7 +37,7 @@ public interface Body extends BasicActions{
 
     /**
      * Binds the Body to the given object(generally an entity).
-     * It should normally be done in the body's init function.
+     * It should normally be done in the body's init/constructor function.
      * @param object : object to bind to.
      */
     <T>void bindEntity(T object);

@@ -47,17 +47,17 @@ public interface Sensor {
      *
      * Follows the Minecraft style co-ordinate system.
      *
-     *                                 (-ve Z-Axis)
-     *                                     North
-     *                                       ^
-     *                                : +-180 degree :
+     *                                  (-ve Z-Axis)
+     *                                      North
+     *                                        ^
+     *                                 : +-180 degree :
      *
-     *(-ve X-Axis) West < 90 degree :       +       : -90 degree > East  (+ve X-Axis)
+     *(-ve X-Axis) West < +90 degree :       +       : -90 degree > East  (+ve X-Axis)
      *
-     *                                 : 0 degree :
-     *                                      v
-     *                                    South
-     *                                (+ve Z-Axis)
+     *                                  : 0 degree :
+     *                                       v
+     *                                     South
+     *                                 (+ve Z-Axis)
      *
      *  +ve Yaw = Clockwise ...!
      *  -ve Yaw = Anti-Clockwise ...!
@@ -140,7 +140,7 @@ public interface Sensor {
      * @see BlockPos
      * @return position : the position coordinates of the entity.
      */
-    BlockPos getPosition();
+    Vec3d getPosition();
 
     /**
      * Returns the block at a position relative to the entity's position.

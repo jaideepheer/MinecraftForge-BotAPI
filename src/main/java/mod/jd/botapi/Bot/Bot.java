@@ -1,10 +1,14 @@
 package mod.jd.botapi.Bot;
 
+import mod.jd.botapi.Bot.AI.Algorithm;
+import mod.jd.botapi.Bot.AI.Nodes.Actions.Action;
 import mod.jd.botapi.Bot.Body.Body;
-
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.common.gameevent.TickEvent;
 import java.lang.reflect.InvocationTargetException;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.SynchronousQueue;
 
 /**
  * This is the main Bot class.
@@ -12,9 +16,98 @@ import java.util.Set;
  * It creates and manages all the threads for its Body, Responsibility conscience and Objective conscience.
  * @see mod.jd.botapi.Bot.Body.Body
  */
-public class Bot implements BasicActions{
-    private static LinkedHashSet<Class<? extends Body>> BodyList = new LinkedHashSet<Class<? extends Body>>();
+public class Bot extends Thread implements BasicActions{
+    private static LinkedHashSet<Class<? extends Body>> BodyList = new LinkedHashSet<>();
+
+    // Stores the Body binded to the Bot.
     private Body botBody ;
+    // Stores the Algorithm followed by the Bot.
+    private Algorithm currentAlgorithm;
+    // Stores the Bot's name.
+    public String name;
+
+    // Keeps the Bot's thread running if true.
+    private boolean isRunning;
+
+    /**
+     * Constructs the Bot and runs it in a new thread.
+     * */
+    public Bot(Body b)
+    {
+        // Register this object to EVENT_BUS for TickEvent.
+        MinecraftForge.EVENT_BUS.register(this);
+
+        setName("BotThread");
+
+        // Bind the body.
+        bind(b);
+
+        // Initiate running state of Bot's thread.
+        isRunning = true;
+
+        // Start the Bot's Thread.
+        start();
+    }
+
+    public synchronized void setAlgorithm(Algorithm algo)
+    {
+        currentAlgorithm = algo;
+    }
+
+    public Algorithm getAlgorithm(){return currentAlgorithm;}
+
+    @Override
+    public void run()
+    {
+        while (isRunning) {
+            // Catch all exceptions to prevent stopping of the BotThread.
+            try {
+                // Check if binded to a Body.
+                if (botBody != null && currentAlgorithm != null) {
+                    // Execute current algorithm.
+                    currentAlgorithm.execute(this);
+                }
+
+                // Wait till the next Tick.
+                try {
+                    // Lock this object to prevent other synchronized functions(like onTick()) from executing till finished.
+                    synchronized (this) {
+                        this.wait();
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            catch (Exception e)
+            {
+                if(currentAlgorithm!=null)System.err.println("Algorithm \""+currentAlgorithm.getName()+"\"");
+                System.err.print(" In Bot \""+name+"\"");
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @SubscribeEvent
+    synchronized void onTick(TickEvent e)
+    {
+        this.notify();
+    }
+
+    synchronized public void kill()
+    {
+        isRunning = false;
+        botBody.unbindEntity();
+
+        // Unregister from the event bus.
+        MinecraftForge.EVENT_BUS.unregister(this);
+    }
+
+    public void finalize() throws Throwable {
+        super.finalize();
+
+        // Unregister from the event bus.
+        MinecraftForge.EVENT_BUS.unregister(this);
+    }
 
     /**
      * Registers a Body to its list of available bodies to assign a valid body to an object passed to bind function.
@@ -35,7 +128,8 @@ public class Bot implements BasicActions{
     }
     /**
      * Binds the object passed to a compatible body in the list of registered bodies and binds the bot to that body.
-     * @param object : the object to bind a body with.
+     * One can send entities here and the Bot wil automatically decide suitable a body for it.
+     * @param object : the object to bind a body with and use with this Bot.
      */
     public <T> void bind(T object)
     {
@@ -69,10 +163,15 @@ public class Bot implements BasicActions{
         }
         if(botBody==null)
         {
-            ;//Oops no compatible body found ...!
+            //TODO : do not construct bot if no compatible body.
+            System.out.println("No compatible body !");
         }
     }
 
+    public Body getBody()
+    {
+        return botBody;
+    }
 
     //======================================================================
     //
@@ -98,6 +197,11 @@ public class Bot implements BasicActions{
     @Override
     public void jumpRelease() {
         botBody.jumpRelease();
+    }
+
+    @Override
+    public void doubleJump() {
+        botBody.doubleJump();
     }
 
     @Override
@@ -171,13 +275,18 @@ public class Bot implements BasicActions{
     }
 
     @Override
-    public boolean interactFacingBlock() {
-        return botBody.interactFacingBlock();
+    public void faceTowards(double x, double y, double z) {
+        botBody.faceTowards(x,y,z);
     }
 
     @Override
-    public boolean interactItemInHand() {
-        return botBody.interactItemInHand();
+    public void interactFacingBlock() {
+        botBody.interactFacingBlock();
+    }
+
+    @Override
+    public void interactItemInHand() {
+        botBody.interactItemInHand();
     }
 
     @Override

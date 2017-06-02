@@ -48,7 +48,7 @@ public class PlayerMovementController {
 
     public boolean faceTowards(double x, double y, double z)
     {
-        double dist,yaw=0,pitch=0,rad=0;
+        double yaw,pitch;
         System.out.println("Facin to "+x+","+y+","+z);
         System.out.println("My Pos "+getPlayer().posX+","+getPlayer().posY+","+getPlayer().posZ);
 

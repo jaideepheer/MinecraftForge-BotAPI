@@ -8,8 +8,13 @@ public interface BasicActions {
     /**
      * Stores the motion state of the bot/body.
      * */
-    enum MovementFront{BACKWARD(-1) ,NONE(0) ,FORWARD(1);public int val;public boolean set;private MovementFront(int v){this.val=v;if(v!=0)this.set=true;}};
-    enum MovementSide{LEFT(1) ,NONE(0) ,RIGHT(-1);public int val;public boolean set;private MovementSide(int v){this.val=v;if(v!=0)this.set=true;}};
+    enum MovementFront{BACKWARD(-1) ,NONE(0) ,FORWARD(1);public int val;public boolean set;
+
+        MovementFront(int v){this.val=v;if(v!=0)this.set=true;}}
+
+    enum MovementSide{LEFT(1) ,NONE(0) ,RIGHT(-1);public int val;public boolean set;
+
+        MovementSide(int v){this.val=v;if(v!=0)this.set=true;}}
 
     /**
      * Makes the bot/body start moving forward.
@@ -34,9 +39,8 @@ public interface BasicActions {
 
     /**
      * Makes the bot/body double jump.
-     * TODO fix doubleJump()
      */
-    //void doubleJump();
+    void doubleJump();
 
     /**
      * Makes the bot/body start sneaking.
@@ -151,18 +155,24 @@ public interface BasicActions {
     void turnToYaw(double degree);
 
     /**
+     * Turns the bot/body's head to look towards the given x-y-z co-ordinates.
+     * Basically calculates the required pitch and yaw and then sets the Bot/Body to faces that way;
+     * */
+    void faceTowards(double x,double y, double z);
+
+    /**
      * Performs the Right-Click action for the block the bot/body is facing towards.
      * @return boolean : Returns weather the action was successful or not.
      *                 : The action will fail if the bot/body is not capable of performing such an action ...!
      */
-    boolean interactFacingBlock();
+    void interactFacingBlock();
 
     /**
      * Performs the Right-Click action for the item in hand.
      * @return boolean : Returns weather the action was successful or not.
      *                 : The action will fail if the bot/body is not capable of performing such an action ...!
      */
-    boolean interactItemInHand();
+    void interactItemInHand();
 
     /**
      * Performs the Right-Click held action for the item in hand.

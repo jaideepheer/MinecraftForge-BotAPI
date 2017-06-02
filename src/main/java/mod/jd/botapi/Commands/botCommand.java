@@ -43,7 +43,7 @@ public class botCommand implements ICommand {
      */
     @Override
     public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException{
-        float a=0,b=0,c=0;
+        float a,b,c=0;
         try
         {
             a=Float.parseFloat(args[1]);
