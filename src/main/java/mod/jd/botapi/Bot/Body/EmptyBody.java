@@ -18,7 +18,7 @@ public abstract class EmptyBody implements Body {
         registerBotClass();
     }
 
-    void registerBotClass()
+    private void registerBotClass()
     {
         if(isClassRegistered)return;
         Bot.registerBody(this.getClass());

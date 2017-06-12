@@ -1,14 +1,12 @@
 package mod.jd.botapi.Bot;
 
-import mod.jd.botapi.Bot.AI.Algorithm;
-import mod.jd.botapi.Bot.AI.Nodes.Actions.Action;
+import mod.jd.botapi.Bot.AI.Algorithms.Algorithm;
 import mod.jd.botapi.Bot.Body.Body;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
-import java.util.concurrent.SynchronousQueue;
 
 /**
  * This is the main Bot class.
@@ -52,6 +50,7 @@ public class Bot extends Thread implements BasicActions{
     public synchronized void setAlgorithm(Algorithm algo)
     {
         currentAlgorithm = algo;
+        currentAlgorithm.init(this);
     }
 
     public Algorithm getAlgorithm(){return currentAlgorithm;}
@@ -104,9 +103,6 @@ public class Bot extends Thread implements BasicActions{
 
     public void finalize() throws Throwable {
         super.finalize();
-
-        // Unregister from the event bus.
-        MinecraftForge.EVENT_BUS.unregister(this);
     }
 
     /**

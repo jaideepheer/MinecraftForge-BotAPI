@@ -1,6 +1,6 @@
 package mod.jd.botapi.Bot.AI.Nodes.Responsibilities;
 
-import mod.jd.botapi.Bot.AI.Algorithm;
+import mod.jd.botapi.Bot.AI.Algorithms.Algorithm;
 import mod.jd.botapi.Bot.Bot;
 
 /**

@@ -1,5 +1,6 @@
 package mod.jd.botapi.Commands;
 
+import mod.jd.botapi.Bot.AI.Algorithms.BotScript;
 import mod.jd.botapi.Bot.AI.Nodes.Actions.MoveStraightToPosAction;
 import mod.jd.botapi.Bot.Body.PlayerBody;
 import mod.jd.botapi.Bot.Bot;
@@ -13,6 +14,8 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.math.BlockPos;
 
 import javax.annotation.Nullable;
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -122,11 +125,17 @@ public class testCommand implements ICommand {
                 case 20:
                     playerHook.faceTowards(Double.parseDouble(args[4]),Double.parseDouble(args[5]),Double.parseDouble(args[6]));
                     break;
-                case 21:
-                    playerHook.actionList.add(new MoveStraightToPosAction(new BlockPos(Double.parseDouble(args[4]),Double.parseDouble(args[5]),Double.parseDouble(args[6]))));
-                    break;
                 case 22:
                     playerHook.setTurnSpeed(Double.parseDouble(args[4]));
+                    break;
+                case 23:
+                    File f = new File(args[4]);
+                    System.out.println(f.getAbsolutePath());
+                    try {
+                        playerHook.setAlgorithm(new BotScript("Test Algorithm",f));
+                    } catch (FileNotFoundException e1) {
+                        e1.printStackTrace();
+                    }
                     break;
             }
         }

@@ -3,6 +3,7 @@ package mod.jd.botapi.Bot.Body;
 import mod.jd.botapi.Bot.BasicActions;
 import mod.jd.botapi.Bot.Body.Senses.Sensor;
 
+import javax.annotation.Nonnull;
 import java.util.Set;
 
 /**

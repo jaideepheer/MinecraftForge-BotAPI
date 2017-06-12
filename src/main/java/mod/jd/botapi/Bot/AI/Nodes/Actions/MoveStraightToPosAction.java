@@ -1,7 +1,6 @@
 package mod.jd.botapi.Bot.AI.Nodes.Actions;
 
 import mod.jd.botapi.Bot.Bot;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 
 /**
@@ -10,9 +9,14 @@ import net.minecraft.util.math.Vec3d;
 public class MoveStraightToPosAction implements Action {
 
     private State currentState = State.Not_Initialised;
-    private BlockPos p;
+    private float x,z;
 
-    public MoveStraightToPosAction(BlockPos bp){p=bp;currentState = State.Not_Initialised;}
+    public MoveStraightToPosAction(float x,float z)
+    {
+        this.x=x;
+        this.z=z;
+        currentState = State.Not_Initialised;
+    }
 
     @Override
     public State getState() {
@@ -30,13 +34,13 @@ public class MoveStraightToPosAction implements Action {
         currentState = State.Is_Being_Performed;
         // TODO: make this accurate.
         Vec3d tempVec = bot.getBody().getSensor().getPosition();
-        if((int)tempVec.xCoord == p.getX() && (int)tempVec.zCoord == p.getZ())
+        if((int)tempVec.xCoord == x && (int)tempVec.zCoord == z)
         {
             bot.stopMoving();
             currentState = State.Successful;
             return;
         }
-        bot.faceTowards(p.getX()+0.5d,bot.getBody().getSensor().getEntity().getEyeHeight()+p.getY()+1,p.getZ()+0.5d);
+        bot.faceTowards(x+0.5d,bot.getBody().getSensor().getEntity().getEyeHeight()+bot.getBody().getSensor().getPosition().yCoord,z+0.5d);
         bot.moveForward();
     }
 

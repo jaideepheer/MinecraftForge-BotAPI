@@ -1,4 +1,4 @@
-package mod.jd.botapi.Bot.AI;
+package mod.jd.botapi.Bot.AI.Algorithms;
 
 import mod.jd.botapi.Bot.AI.Nodes.Actions.Action;
 import mod.jd.botapi.Bot.AI.Nodes.Responsibilities.Responsibility;
@@ -10,18 +10,18 @@ import java.util.*;
  * An algorithm manages all the Actions and Responsibilities and can be assigned to a Bot.
  */
 public abstract class Algorithm {
-// TODO: make extended script algorithm class.
+
     // Stores the name of the Algorithm.
-    protected String name;
+    String name;
 
     // Stores the current action to be or being performed.
-    protected Action currentAction;
+    Action currentAction;
+
     // Stores the current responsibility being fulfilled if any.
     private Responsibility currentResponsibility;
 
     // Stores the list of Responsibilities to be maintained.
     private List<Responsibility> responsibilityList = Collections.synchronizedList(new ArrayList<Responsibility>());
-
 
     /**
      * Constructor, sets the algorithm's name and initialises its values.
@@ -43,13 +43,24 @@ public abstract class Algorithm {
     }
 
     /**
+     * Used to initialize the algorithm. Called whenever the algorithm is set to a bot.
+     */
+    abstract public void init(Bot bot);
+
+    /**
      * Schedules the next action to be performed in the next execution/tick/iteration to be the currentAction.
      * Is called when an action completes successfully or the work with it is done.
      *
      * Should be public so that it can be explicitly called to force to next action.
      *
      * */
-    abstract void scheduleNextAction();
+    abstract public void scheduleNextAction();
+
+    /**
+     * Sets the currentAction as the action passed and performs all necessary operations.
+     * @param action is the action to be performed
+     */
+    public abstract void setAction(Action action);
 
     /**
      * Executes the algorithm.
@@ -114,8 +125,12 @@ public abstract class Algorithm {
             }
         }
 
-        // Do nothing if there is no action to be performed.
-        if(currentAction == null)return;
+        // Schedule next action if there is no action to be performed.
+        if(currentAction == null)
+        {
+            scheduleNextAction();
+            return;
+        }
 
         // Check the action's State.
         if(currentAction.getState() == Action.State.Not_Initialised)
@@ -130,6 +145,7 @@ public abstract class Algorithm {
         // Check the action's State.
         if(currentAction.getState() == Action.State.Successful)
         {
+            currentAction = null;
             // Schedule the next action if the currentAction has completed successfully.
             scheduleNextAction();
         }
