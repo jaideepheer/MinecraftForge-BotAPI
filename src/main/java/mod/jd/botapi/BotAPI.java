@@ -1,11 +1,20 @@
 package mod.jd.botapi;
 
+import mod.jd.botapi.Bot.Body.Body;
+import mod.jd.botapi.Bot.Body.BotAPIBody;
+import mod.jd.botapi.Bot.Body.EntityBody;
+import mod.jd.botapi.Bot.Body.PlayerBody;
+import mod.jd.botapi.Bot.Bot;
 import net.minecraftforge.client.ClientCommandHandler;
 import net.minecraftforge.fml.common.DummyModContainer;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventHandler;
 import net.minecraftforge.fml.common.ModMetadata;
+import net.minecraftforge.fml.common.discovery.ASMDataTable;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+
+import java.util.Set;
 
 /**
  *  This is the main class.
@@ -64,6 +73,31 @@ public class BotAPI extends DummyModContainer
     }
 
     /**
+     * This is the preInit function. It gets the annotation data from fml and registers all the annotated Bodies.
+     * @see mod.jd.botapi.Bot.Body.BotAPIBody
+     * @see FMLPreInitializationEvent#getAsmData()
+     */
+    @EventHandler
+    public void preInit(FMLPreInitializationEvent event)
+    {
+        // Get list of all classes with BotAPIBody annotation.
+        Set<ASMDataTable.ASMData> s = event.getAsmData().getAll(BotAPIBody.class.getName());
+        for (ASMDataTable.ASMData asmdata:s)
+        {
+            try {
+                // Get class from its name.
+                Class c = Class.forName(asmdata.getClassName());
+                // Register it if it really extends Body.
+                if(Body.class.isAssignableFrom(c))
+                    Bot.registerBody(c);
+            }
+            catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    /**
      * It is the init function which initialises the mod.
      * This function is called by Forge during the Mod Initialisation Phase.
      * @see EventHandler
@@ -74,7 +108,16 @@ public class BotAPI extends DummyModContainer
     {
         System.out.println("Initialising BotAPI");
         registerCommands();
+        registerBodies();
         pmc = new PlayerMovementController();
+    }
+
+    /**
+     * Registers all the Bodies, introduced by this Mod, to Bot class for automatic Body selection.
+     */
+    private void registerBodies()
+    {
+        Bot.registerBody(PlayerBody.class);
     }
 
     private void registerCommands() {

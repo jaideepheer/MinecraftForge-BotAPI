@@ -5,6 +5,8 @@ import mod.jd.botapi.Bot.Body.Body;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
+import org.jetbrains.annotations.Nullable;
+
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
@@ -55,6 +57,10 @@ public class Bot extends Thread implements BasicActions{
 
     public Algorithm getAlgorithm(){return currentAlgorithm;}
 
+    /**
+     * This method runs on the bot thread to update the currentAlgorithm and is resumed by tick events.
+     * It updates the currentAlgorithm and then waits till the next invocation by the {@link #onTick(TickEvent)} function.
+     */
     @Override
     public void run()
     {
@@ -86,6 +92,10 @@ public class Bot extends Thread implements BasicActions{
         }
     }
 
+    /**
+     * This method resumes the bot thread at every tick.
+     * @param e
+     */
     @SubscribeEvent
     synchronized void onTick(TickEvent e)
     {
@@ -106,12 +116,12 @@ public class Bot extends Thread implements BasicActions{
     }
 
     /**
-     * Registers a Body to its list of available bodies to assign a valid body to an object passed to bind function.
+     * Registers a Body to its list of available bodies for automatic Body selection.
      * @param b : the body class to register to the list of available bodies
      */
     public static void registerBody(Class<? extends Body> b)
     {
-        BodyList.add(b);
+        if(!BodyList.contains(b)) BodyList.add(b);
     }
 
     /**
@@ -122,46 +132,47 @@ public class Bot extends Thread implements BasicActions{
     {
         botBody = b;
     }
+
     /**
-     * Binds the object passed to a compatible body in the list of registered bodies and binds the bot to that body.
-     * One can send entities here and the Bot wil automatically decide suitable a body for it.
-     * @param object : the object to bind a body with and use with this Bot.
+     * Binds the object passed to a compatible body in the list of registered bodies and returns a bot with that body.
+     * One can send entities here and the Bot wil automatically decide a suitable body for it.
+     * @param object : the object to bind a body with and create a Bot.
      */
-    public <T> void bind(T object)
+    @Nullable
+    public static <T> Bot getInstanceFromFactory(T object)
     {
-        botBody = null;
+        Body body = null;
         for(Class<? extends Body> c:BodyList)
         {
             try {
-                Body body = null;
                 try {
                     body = c.getDeclaredConstructor().newInstance();
                 } catch (InvocationTargetException | NoSuchMethodException e) {
                     try {
-                        body = c.getDeclaredConstructor(object.getClass()).newInstance();
+                        body = c.getDeclaredConstructor(object.getClass()).newInstance(object);
                     } catch (InvocationTargetException | NoSuchMethodException e1) {
                         e1.printStackTrace();
                     }
-                    e.printStackTrace();
                 }
-                Set<Class<?>> list = body.getCompatibleClassList();
+                Set<Class<?>> list = null;
+
+                if (body != null)list = body.getCompatibleClassList();
+                else {System.out.println("Null Body");continue;}
+
                 for(Class<?> s:list)
                 {
                     if(s.isAssignableFrom(object.getClass()))
                     {
-                        botBody = body;
-                        botBody.bindEntity(object);
+                        body.bindEntity(object);
+                        return new Bot(body);
                     }
                 }
             } catch (IllegalAccessException | InstantiationException | NullPointerException e) {
                 e.printStackTrace();
             }
         }
-        if(botBody==null)
-        {
-            //TODO : do not construct bot if no compatible body.
-            System.out.println("No compatible body !");
-        }
+        System.out.println("No compatible body !");
+        return null;
     }
 
     public Body getBody()

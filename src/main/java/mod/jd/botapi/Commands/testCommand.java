@@ -53,7 +53,7 @@ public class testCommand implements ICommand {
             if(playerHook==null|| Integer.parseInt(args[0])==-1)
             {
                 playerHook = null;
-                playerHook=new Bot(new PlayerBody((EntityPlayerSP) sender.getCommandSenderEntity()));
+                playerHook=Bot.getInstanceFromFactory((EntityPlayerSP) sender.getCommandSenderEntity());
             }
             System.out.println("SPEED = "+playerHook.getBody().getSensor().getMovementSpeed()
                     +"\nLooking Block = "+playerHook.getBody().getSensor().getFacingBlock(Integer.parseInt(args[0])>0,Integer.parseInt(args[1])>0,Integer.parseInt(args[2])>0)

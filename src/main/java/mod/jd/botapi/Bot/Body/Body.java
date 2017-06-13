@@ -4,6 +4,9 @@ import mod.jd.botapi.Bot.BasicActions;
 import mod.jd.botapi.Bot.Body.Senses.Sensor;
 
 import javax.annotation.Nonnull;
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.util.Set;
 
 /**

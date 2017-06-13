@@ -11,19 +11,6 @@ import mod.jd.botapi.Bot.Bot;
 public abstract class EmptyBody implements Body {
     // Stores if the entity is binded.
     protected boolean isBinded;
-    private static boolean isClassRegistered;
-
-    EmptyBody()
-    {
-        registerBotClass();
-    }
-
-    private void registerBotClass()
-    {
-        if(isClassRegistered)return;
-        Bot.registerBody(this.getClass());
-        isClassRegistered = true;
-    }
 
     @Override
     public void unbindEntity()
