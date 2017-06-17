@@ -63,6 +63,22 @@ public abstract class Algorithm {
     public abstract void setAction(Action action);
 
     /**
+     * Sets the currentAction to null.
+     */
+    public synchronized void cancelCurrentAction()
+    {
+        currentAction = null;
+    }
+
+    /**
+     * Sets the currentResponsibility to null.
+     */
+    public synchronized void cancelCurrentResponsibility()
+    {
+        currentResponsibility = null;
+    }
+
+    /**
      * Executes the algorithm.
      * This does all the work of performing actions and checking responsibilities.
      * It also handles fulfilling of responsibilities.
@@ -74,6 +90,9 @@ public abstract class Algorithm {
         // Check All Responsibilities.
         for (Responsibility responsibility : responsibilityList)
         {
+            // Skip if the responsibilityList has a null element.
+            if(responsibility == null)continue;
+
             // Check if it is the current responsibility being fulfilled.
             if(responsibility == currentResponsibility)
             {
@@ -151,15 +170,15 @@ public abstract class Algorithm {
         }
         else if (currentAction.getState() == Action.State.Failed)
         {
-            throw new RuntimeException("Action \""+currentAction.getName()+"\" returned Failed Status.");
+            throw new RuntimeException("Action \""+currentAction.getMetaData().getName()+"\" returned Failed Status.");
         }
         else if(currentAction.getState() == Action.State.Never_Performed)
         {
-            throw new RuntimeException("Action \""+currentAction.getName()+"\" returned Not Yet Performed state even after execution.");
+            throw new RuntimeException("Action \""+currentAction.getMetaData().getName()+"\" returned Not Yet Performed state even after execution.");
         }
         else if (currentAction.getState() == Action.State.Not_Initialised)
         {
-            throw new RuntimeException("Action \""+currentAction.getName()+"\" returned Not Initialised state even after initialisation.");
+            throw new RuntimeException("Action \""+currentAction.getMetaData().getName()+"\" returned Not Initialised state even after initialisation.");
         }
     }
 }

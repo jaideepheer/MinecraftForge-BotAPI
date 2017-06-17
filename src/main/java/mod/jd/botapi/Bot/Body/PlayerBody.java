@@ -24,6 +24,7 @@ import java.util.Set;
  * @see EmptyBody for functions common to most Bodies.
  * @see Body for all the documentation not found here.
  */
+@SuppressWarnings("ALL")
 @BotAPIBody
 public class PlayerBody extends EmptyBody {
 

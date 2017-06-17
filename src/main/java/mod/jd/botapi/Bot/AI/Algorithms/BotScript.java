@@ -9,6 +9,7 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import java.io.*;
+import java.util.function.Function;
 
 /**
  * A BotScript is an algorithm that follows a Script using the Nashorn Javascript Engine.
@@ -52,8 +53,31 @@ public class BotScript extends Algorithm implements Runnable {
         // TODO: provide the script proper classes and objects.
         // Provide this algorithm.
         scriptEngine.put("Algorithm",this);
-        scriptEngine.put("MoveStraightToPosAction",MoveStraightToPosAction.class);
-        scriptEngine.put("BlockPos",BlockPos.class);
+
+        // Add the waitForActionCompletion() function.
+        // This function pauses the script thread till the currentAction has ended.
+        scriptEngine.put("waitForActionCompletion", (Runnable)()->{
+            try {
+                synchronized (this) {
+                    wait();
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        });
+
+        // Add the getAction() function.
+        scriptEngine.put("getActionType",(Function<String,Object>)(name)->{
+            // Get the required action class by parsing the given name.
+            Class action = Bot.getActionByName(name);
+            try {
+                // get the Java.type object for the class and return it.
+                return scriptEngine.eval("Java.type(\'"+action.getName()+"\')");
+            } catch (ScriptException e) {
+                e.printStackTrace();
+                return null;
+            }
+        });
 
         // Start tne ScriptThread so it waits for scheduling the next action.
         scriptThread.start();
@@ -63,29 +87,35 @@ public class BotScript extends Algorithm implements Runnable {
      * This function resumes the scriptThread when the currentAction has completed.
      */
     @Override
-    public void scheduleNextAction() {
+    public synchronized void scheduleNextAction() {
         // Resume the scriptThread so it can set the next action.
         notify();
     }
 
     /**
      * This is called by the script whenever a new action is to be performed.
-     * This function sets the currentAction and makes the thread wait.
+     * This function sets the currentAction or makes the thread wait if previous action is incomplete.
+     * NOTE that if currentAction had ended it sets the new action and resumes script execution till next setAction() call.
+     *      This only pauses the script thread if called before previous action completion.
+     *      Hence, the script can set an action and monitor the Bot while it performs the action.
      * @param action is the action to be performed.
      */
     @Override
     public synchronized void setAction(Action action){
-        // Do not wait for completion if action sent was null.
-        if(action == null)return;
 
-        currentAction = action;
-
-        try {
-            // Wait till invoked after action completion.
-            wait();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        // If no current action then perform given action.
+        // Cancel currentAction if action sent was null.
+        if(currentAction == null || action == null)
+            currentAction = action;
+        // else wait for currentAction to end.
+        else
+            try {
+                // Wait till invoked after action completion.
+                wait();
+                currentAction = action;
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
     }
 
     public void finalize()
@@ -93,28 +123,20 @@ public class BotScript extends Algorithm implements Runnable {
         synchronized (this)
         {
             // TODO: find a better way to stop the script
-            Thread.currentThread().stop();
+            scriptThread.stop();
         }
     }
 
     @Override
     public void run() {
-
-        /*synchronized (this){
-            // Wait till invoked for first action.
-            try {
-                wait();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }*/
-
         try {
             // Execute javascript.
             scriptEngine.eval(scriptReader);
         } catch (ScriptException e) {
+            // TODO: parse the script file to catch unknown method errors.
             // Exception in Script.
             e.printStackTrace();
         }
     }
 }
+
