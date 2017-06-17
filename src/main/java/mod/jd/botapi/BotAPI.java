@@ -1,5 +1,7 @@
 package mod.jd.botapi;
 
+import mod.jd.botapi.Bot.AI.Nodes.Actions.Action;
+import mod.jd.botapi.Bot.AI.Nodes.BotAPIAlgorithmNode;
 import mod.jd.botapi.Bot.Body.Body;
 import mod.jd.botapi.Bot.Body.BotAPIBody;
 import mod.jd.botapi.Bot.Body.EntityBody;
@@ -92,6 +94,23 @@ public class BotAPI extends DummyModContainer
                     Bot.registerBody(c);
             }
             catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+        }
+
+        // Get list of all classes with BotAPIAlgorithmNode annotation.
+        s = event.getAsmData().getAll(BotAPIAlgorithmNode.class.getName());
+        for (ASMDataTable.ASMData asmdata:s)
+        {
+            try{
+                // Get class from its name.
+                Class c = Class.forName(asmdata.getClassName());
+                // Register it if it really extends Body.
+                if(Action.class.isAssignableFrom(c))
+                    Bot.registerAction(c,(String)(asmdata.getAnnotationInfo().get("modid")),(String)(asmdata.getAnnotationInfo().get("NodeMetaDataObjectName")));
+            }
+            catch (ClassNotFoundException e)
+            {
                 e.printStackTrace();
             }
         }

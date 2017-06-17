@@ -1,23 +1,25 @@
 package mod.jd.botapi.Bot;
 
 import mod.jd.botapi.Bot.AI.Algorithms.Algorithm;
+import mod.jd.botapi.Bot.AI.Nodes.Actions.Action;
+import mod.jd.botapi.Bot.AI.Nodes.NodeMetaData;
 import mod.jd.botapi.Bot.Body.Body;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import org.jetbrains.annotations.Nullable;
-
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 /**
  * This is the main Bot class.
- * It manages the Body and the AI, including Script execution and stuff.
- * It creates and manages all the threads for its Body, Responsibility conscience and Objective conscience.
+ * It manages the interaction between Body and the AI.
+ * It runs in a separate thread and manages execution of its Algorithm.
  * @see mod.jd.botapi.Bot.Body.Body
  */
 public class Bot extends Thread implements BasicActions{
     private static LinkedHashSet<Class<? extends Body>> BodyList = new LinkedHashSet<>();
+    private static HashMap<String,HashMap<String,Class<? extends Action>>> ActionList = new HashMap<>();
 
     // Stores the Body binded to the Bot.
     private Body botBody ;
@@ -117,11 +119,69 @@ public class Bot extends Thread implements BasicActions{
 
     /**
      * Registers a Body to its list of available bodies for automatic Body selection.
-     * @param b : the body class to register to the list of available bodies
+     * @param bodyClass : the body class to register to the list of available bodies
      */
-    public static void registerBody(Class<? extends Body> b)
+    public static void registerBody(Class<? extends Body> bodyClass)
     {
-        if(!BodyList.contains(b)) BodyList.add(b);
+        if(!BodyList.contains(bodyClass)) BodyList.add(bodyClass);
+    }
+
+    /**
+     * Registers an Action to its list of available Actions.
+     * @param actionClass : the action class to be registered.
+     * @param modid : the modid of the mod introducing the action.
+     * @param NodeMetaDataObjectName : the name of the public static {@link NodeMetaData} field in the Action's class.
+     */
+    public static void registerAction(Class<? extends Action> actionClass,String modid,String NodeMetaDataObjectName)
+    {
+        // Add the action corresponding to its modid.
+        try {
+            // Get the name of the Action from its meta data object.
+            String name = ((NodeMetaData)(actionClass.getDeclaredField(NodeMetaDataObjectName).get(null))).getName();
+
+            // If list does not contain the name key then make it.
+            if(!ActionList.containsKey(name))
+                ActionList.put(name,new HashMap<>());
+
+            // Add action to list if there is no other action with the same name and modid already present.
+            if(!ActionList.get(name).containsKey(modid))
+                ActionList.get(name).put(modid,actionClass);
+            // Else print error and skip this duplicate action.
+            else
+                System.err.println("Duplicate Action("+actionClass.getName()+") with same modid("+modid+") and name("+name+") skipped.");
+        }
+        // Print messages in case of errors.
+        catch (NoSuchFieldException e) {
+            System.err.println("Could not find metadata object("+NodeMetaDataObjectName+") for "+modid+":"+actionClass.getName()+" skipping registering this Action.");
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            System.err.println("Could not get access to metadata object("+NodeMetaDataObjectName+") for "+modid+":"+actionClass.getName()+" maybe it is not defined as a 'public static' field. Skipping registering this Action.");
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Returns the Action class from the ActionList corresponding the given action name.
+     * The action name can be preceded by the modid for further clarity in case of naming conflicts.
+     * Eg: botapi:MoveStraightToPosAction ; where the modid and the name are separated by ':'
+     * @param name : The name of the action to retrieve.
+     * @return The Action class from the list.
+     *         Returns null if no such action is found.
+     */
+    public static Class<? extends Action> getActionByName(String name)
+    {
+        String modid = name.split(":")[0];
+        if(!name.contains(":"))
+        {
+            modid = null;
+        }
+        else
+            name = name.split(":")[1];
+
+        Class<? extends Action> c = null;
+        if(modid == null) c = ActionList.get(name).entrySet().iterator().next().getValue();
+        else c = ActionList.get(name).get(modid);
+        return c;
     }
 
     /**

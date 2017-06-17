@@ -1,14 +1,19 @@
 package mod.jd.botapi.Bot.AI.Nodes.Actions;
 
+import mod.jd.botapi.Bot.AI.Nodes.BotAPIAlgorithmNode;
+import mod.jd.botapi.Bot.AI.Nodes.NodeMetaData;
 import mod.jd.botapi.Bot.Bot;
+import mod.jd.botapi.BotAPI;
 import net.minecraft.util.math.Vec3d;
 
 /**
  * Makes the Bot face towards and move straight towards a given BlockPos.
  */
+@BotAPIAlgorithmNode(modid = BotAPI.MODID, NodeMetaDataObjectName = "meta")
 public class MoveStraightToPosAction implements Action {
 
     private State currentState = State.Not_Initialised;
+    public static final NodeMetaData meta = new NodeMetaData("MoveStraightToPosAction","Makes the bot face a x-z position and move towards it.");
     private float x,z;
 
     public MoveStraightToPosAction(float x,float z)
@@ -45,7 +50,7 @@ public class MoveStraightToPosAction implements Action {
     }
 
     @Override
-    public String getName() {
-        return "MoveStraightToPosAction";
+    public NodeMetaData getMetaData() {
+        return meta;
     }
 }

@@ -1,7 +1,5 @@
 package mod.jd.botapi.Bot.Body;
 
-import mod.jd.botapi.Bot.Bot;
-
 /**
  * This serves as a Base class which implements interface Body and sets up basic working, common for all Bodies.
  * It also registers all classes with the Bot class as a body.
@@ -37,7 +35,6 @@ public abstract class EmptyBody implements Body {
         x=-x;
         y = y - (getSensor().getPosition().yCoord + getSensor().getEntity().getEyeHeight());
         z -= getSensor().getPosition().zCoord;
-        System.out.println("My dist "+x+","+y+","+z);
         yaw=getYawFromOriginToPoint(x,z);
 
         if(y==0)

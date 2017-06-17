@@ -18,7 +18,8 @@ public interface Node {
     }
 
     /**
-     * Returns the name of the Node.
+     * Returns the meta data object of the Node.
      */
-    String getName();
+    NodeMetaData getMetaData();
 }
+
