@@ -27,6 +27,9 @@ public class BotScript extends Algorithm implements Runnable {
     private ScriptEngineManager scriptEngineManager = new ScriptEngineManager();
     private ScriptEngine scriptEngine = scriptEngineManager.getEngineByName("nashorn");
 
+    // Is true when the script must stop.
+    private volatile boolean toStop;
+
 
     /**
      * Constructor, sets the algorithm's name and initialises its values.
@@ -49,6 +52,11 @@ public class BotScript extends Algorithm implements Runnable {
 
         // Initialise scriptThread.
         scriptThread = new Thread(this,name+" ScriptThread");
+    }
+
+    public void stop()
+    {
+        toStop = true;
     }
 
     @Override
@@ -90,12 +98,12 @@ public class BotScript extends Algorithm implements Runnable {
     }
 
     /**
-     * This function resumes the scriptThread when the currentAction has completed.
+     * This function resumes all the scriptThreads paused on this object when the currentAction has completed.
      */
     @Override
     public synchronized void scheduleNextAction() {
-        // Resume the scriptThread so it can set the next action.
-        notify();
+        // Resume all the scriptThreads paused on this object so they can set their next action.
+        notifyAll();
     }
 
     /**
@@ -136,6 +144,7 @@ public class BotScript extends Algorithm implements Runnable {
     @Override
     public void run() {
         try {
+            // TODO: make the script check for interruptions.
             // Execute javascript.
             scriptEngine.eval(scriptReader);
         } catch (ScriptException e) {

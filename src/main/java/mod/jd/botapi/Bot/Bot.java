@@ -35,10 +35,10 @@ public class Bot extends Thread implements BasicActions{
     public String name;
 
     // Used to allow onTick to return if the Bot thread is not waiting.
-    private boolean isWaiting;
+    private volatile boolean isWaiting;
 
     // Keeps the Bot's thread running if true.
-    private boolean isRunning;
+    private volatile boolean isRunning;
 
     /**
      * Constructs the Bot and runs it in a new thread.
@@ -119,7 +119,7 @@ public class Bot extends Thread implements BasicActions{
     @SubscribeEvent
     void onTick(TickEvent e)
     {
-        if(isWaiting)synchronized (this){this.notify();}
+        if(isWaiting)synchronized (this){this.notifyAll();}
     }
 
     synchronized public void kill()
