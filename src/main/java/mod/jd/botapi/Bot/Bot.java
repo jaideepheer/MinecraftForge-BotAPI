@@ -13,7 +13,7 @@ import mod.jd.botapi.Bot.Body.Body;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
-import org.jetbrains.annotations.Nullable;
+import javax.annotation.Nullable;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
@@ -34,6 +34,9 @@ public class Bot extends Thread implements BasicActions{
     // Stores the Bot's name.
     public String name;
 
+    // Used to allow onTick to return if the Bot thread is not waiting.
+    private boolean isWaiting;
+
     // Keeps the Bot's thread running if true.
     private boolean isRunning;
 
@@ -52,6 +55,7 @@ public class Bot extends Thread implements BasicActions{
 
         // Initiate running state of Bot's thread.
         isRunning = true;
+        isWaiting = false;
 
         // Start the Bot's Thread.
         start();
@@ -70,9 +74,13 @@ public class Bot extends Thread implements BasicActions{
      * It updates the currentAlgorithm and then waits till the next invocation by the {@link #onTick(TickEvent)} function.
      */
     @Override
-    public void run()
+    public synchronized void run()
     {
         while (isRunning) {
+
+            // The Bot thread is not in wait state.
+            isWaiting = false;
+
             // Catch all exceptions to prevent stopping of the BotThread.
             try {
                 // Check if binded to a Body.
@@ -85,8 +93,12 @@ public class Bot extends Thread implements BasicActions{
                 try {
                     // Lock this object to prevent other synchronized functions(like onTick()) from executing till finished.
                     synchronized (this) {
+                        // Thread will now wait.
+                        isWaiting = true;
                         this.wait();
                     }
+                    // Thread has resumed.
+                    isWaiting = false;
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -105,9 +117,9 @@ public class Bot extends Thread implements BasicActions{
      * @param e
      */
     @SubscribeEvent
-    synchronized void onTick(TickEvent e)
+    void onTick(TickEvent e)
     {
-        this.notify();
+        if(isWaiting)synchronized (this){this.notify();}
     }
 
     synchronized public void kill()
