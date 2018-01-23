@@ -131,7 +131,7 @@ public abstract class Algorithm {
             if(responsibility.getState() == Responsibility.ResponsibilityState.NOT_FULFILLED)
             {
                 // Try to fulfill the responsibility.
-                currentResponsibility.fulfill(bot,this);
+                responsibility.fulfill(bot,this);
 
                 // Check the responsibility's state.
                 if(responsibility.getState() == Responsibility.ResponsibilityState.IS_BEING_FULFILLED)
@@ -139,13 +139,13 @@ public abstract class Algorithm {
                     currentResponsibility = responsibility;
                     return;
                 }
-                else if(currentResponsibility.getState() == Responsibility.ResponsibilityState.CANNOT_FULFILL)
+                else if(responsibility.getState() == Responsibility.ResponsibilityState.CANNOT_FULFILL)
                 {
-                    throw new RuntimeException("The responsibility \""+currentResponsibility.getName()+"\" returned Cannot Fulfill status.");
+                    throw new RuntimeException("The responsibility \""+responsibility.getName()+"\" returned Cannot Fulfill status.");
                 }
-                else if (currentResponsibility.getState() == Responsibility.ResponsibilityState.NOT_FULFILLED)
+                else if (responsibility.getState() == Responsibility.ResponsibilityState.NOT_FULFILLED)
                 {
-                    throw new RuntimeException("The responsibility \""+currentResponsibility.getName()+"\" returned Not Fulfilled status even after execution.");
+                    throw new RuntimeException("The responsibility \""+responsibility.getName()+"\" returned Not Fulfilled status even after execution.");
                 }
             }
         }
